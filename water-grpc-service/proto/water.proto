@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package water;
+
+option go_package = "service/water";
+
+message Message {
+  double weight = 2;
+  double height = 3;
+}
+
+message Response {
+  double value = 1 ;
+  string unit = 2;
+}
+
+service WaterService {
+  rpc SayHello(Message) returns (Response) {}
+}

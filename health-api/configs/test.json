@@ -1,0 +1,5 @@
+{
+    "Application": "health-api",
+    "Env": "test",
+    "Version": "v1"
+}

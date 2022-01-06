@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package bmr;
+
+option go_package = "service/bmr";
+
+message Message {
+  string gender = 1;
+  double weight = 2;
+  double height = 3;
+  int64 age = 4;
+  string activity = 5;
+}
+
+message Response {
+  double bmr = 1 ;
+  double necessity = 2;
+}
+
+service BMRService {
+  rpc SayHello(Message) returns (Response) {}
+}

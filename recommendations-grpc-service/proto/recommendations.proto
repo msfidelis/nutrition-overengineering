@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package recommendations;
+
+option go_package = "service/recommendations";
+
+message Message {
+  double weight = 1;
+  double height = 2;
+}
+
+message Response {
+  double  waterValue          = 1;
+  string  waterUnit           = 2;
+  string  proteinsUnit       = 3;
+  int64   proteinsValue       = 4;
+  double  caloriesToLoss      = 5;
+  double  caloriesToMaintein  = 6;
+  double  caloriesToGain      = 7;
+}
+
+service RecomendationsService {
+  rpc SayHello(Message) returns (Response) {}
+}

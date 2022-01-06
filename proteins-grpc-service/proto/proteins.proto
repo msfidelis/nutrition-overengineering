@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package proteins;
+
+option go_package = "service/proteins";
+
+message Message {
+  double weight = 1;
+}
+
+message Response {
+  int64 value  = 1 ;
+  string unit   = 2;
+}
+
+service ProteinsService {
+  rpc SayHello(Message) returns (Response) {}
+}
