@@ -87,10 +87,12 @@ curl --location --request POST '0.0.0.0:8080/calculator' \
 * Create communication across services 
 * Refactor communication lib 
 * Customize log lib for trace id
+* Error Handling and Retries
 * Implement Prometheus HTTP Endpoint
 * Implement Jaeger Tracing
-* Implement CI / CD 
+* Implement CI / CD to release Docker Images
 * Create Kubernetes Deployment
+* Create Istio Manifests to Service Mesh gRPC Optimizations
 
 ## Notes 
 
