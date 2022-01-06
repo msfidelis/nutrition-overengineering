@@ -4,6 +4,18 @@ Application to calc healthcare and nutrition metrics, but using the most over en
 > "Caraca Matheus, tu é idiota??? 
 > "Sim"
 
+
+# Overenginner Microservices Summary
+
+* health-api: REST Interface for product. Using orchestrator pattern. 
+* bmr-grpc: gRPC Microservice to calc Basal Metabolic Rate
+* imc-grpc: gRPC Microservice to calc IMC 
+* recommendations-grpc: gRPC Microservice to summarize diet recommendations and contabilize Macros
+* proteins-grpc: gRPC Microservice to calc daily protein necessity
+* water-grpc: gRPC Microservice to calc daily water ingestion
+* calories-grpc: gRPC to calc calories ingestion necessity
+* frontend: VueJS SPA
+
 # API  
 
 ## Usage 
