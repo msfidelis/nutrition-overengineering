@@ -20,14 +20,10 @@ func (s *Server) SayHello(ctx context.Context, in *Message) (*Response, error) {
 
 	recommendation := calculator.Calc(int64(in.Weight))
 
-	// Water Service Call
-
-	// log.Info().
-	// 	Float64("Weight", in.Weight).
-	// 	Float64("Height", in.Height).
-	// 	Float64("IMC", imcCalc).
-	// 	Str("Class", class).
-	// 	Msg("IMC Calculated")
+	log.Info().
+		Float64("Weight", in.Weight).
+		Int64("Proteins Necessity", recommendation).
+		Msg("Proteins Necessity calculated")
 
 	return &Response{Value: recommendation, Unit: "kcal"}, nil
 }

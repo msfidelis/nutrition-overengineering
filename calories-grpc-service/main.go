@@ -2,7 +2,7 @@ package main
 
 import (
 	"calories-grpc-service/pkg/logger"
-	"calories-grpc-service/proto/imc/service/imc"
+	"calories-grpc-service/proto/calories/service/calories"
 	"net"
 	"os"
 
@@ -35,11 +35,11 @@ func main() {
 	logInternal.Info().
 		Msg("Listener for calories-grpc-service is created")
 
-	s := imc.Server{}
+	s := calories.Server{}
 
 	grpcServer := grpc.NewServer()
 
-	imc.RegisterIMCServiceServer(grpcServer, &s)
+	calories.RegisterCaloriesServiceServer(grpcServer, &s)
 
 	if err := grpcServer.Serve(lis); err != nil {
 		logInternal.Error().

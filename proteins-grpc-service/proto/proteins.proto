@@ -6,6 +6,7 @@ option go_package = "service/proteins";
 
 message Message {
   double weight = 1;
+  double necessityCaloric = 2;
 }
 
 message Response {

@@ -96,6 +96,29 @@ func (s *Server) SayHello(ctx context.Context, in *Message) (*Response, error) {
 			Msg("Failed consume water service")
 	}
 
+	// Calories
+	log.Info().
+		Float64("Weight", in.Weight).
+		Float64("Height", in.Height).
+		Msg("Calculating calories necessity")
+
+	caloriesEndpoint := os.Getenv("CALORIES_SERVICE_ENDPOINT")
+
+	log.Info().
+		Str("Service", "calories").
+		Str("CALORIES_SERVICE_ENDPOINT", caloriesEndpoint).
+		Msg("Creating remote connection with gRPC Endpoint for Calories Consume Service")
+
+	var connCalories *grpc.ClientConn
+	connCalories, errCalories := grpc.Dial(caloriesEndpoint, grpc.WithInsecure())
+	if errCalories != nil {
+		log.Error().
+			Str("Service", "calories").
+			Str("Error", errCalories.Error()).
+			Msg("Failed to create gRPC Connection with Water Consume Service")
+	}
+	defer connCalories.Close()
+
 	return &Response{
 		WaterValue:    resWater.Value,
 		WaterUnit:     resWater.Unit,

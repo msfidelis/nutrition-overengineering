@@ -158,8 +158,9 @@ func Post(c *gin.Context) {
 
 	recommendationsClient := recommendations.NewRecomendationsServiceClient(connRecommendations)
 	resRecommendations, err := recommendationsClient.SayHello(context.Background(), &recommendations.Message{
-		Weight: request.Weight,
-		Height: request.Height,
+		Weight:   request.Weight,
+		Height:   request.Height,
+		Calories: resBMR.Necessity,
 	})
 
 	// BMR Response

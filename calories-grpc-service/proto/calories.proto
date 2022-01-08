@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package calories;
+
+option go_package = "service/calories";
+
+message Message {
+  double necessity = 1;
+}
+
+message Response {
+  double loss     = 1;
+  double gain     = 2;
+  double maintain = 3; 
+}
+
+service CaloriesService {
+  rpc SayHello(Message) returns (Response) {}
+}
