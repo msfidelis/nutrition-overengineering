@@ -16,6 +16,10 @@ Application to calc healthcare and nutrition metrics, but using the most over en
 * calories-grpc: gRPC to calc calories ingestion necessity
 * frontend: VueJS SPA
 
+## Workflow 
+
+![Workflow](.github/images/workflow.png)
+
 # API  
 
 ## Usage 
