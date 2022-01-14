@@ -184,7 +184,12 @@ func Post(c *gin.Context) {
 	response.Recomendations.Protein.Unit = resRecommendations.ProteinsUnit
 	response.Recomendations.Water.Value = resRecommendations.WaterValue
 	response.Recomendations.Water.Unit = resRecommendations.WaterUnit
-
+	response.Recomendations.Calories.Maintain.Value = resRecommendations.CaloriesToMaintein
+	response.Recomendations.Calories.Maintain.Unit = response.Basal.Necessity.Unit
+	response.Recomendations.Calories.Gain.Value = resRecommendations.CaloriesToGain
+	response.Recomendations.Calories.Gain.Unit = response.Basal.Necessity.Unit
+	response.Recomendations.Calories.Loss.Value = resRecommendations.CaloriesToLoss
+	response.Recomendations.Calories.Loss.Unit = response.Basal.Necessity.Unit
 	response.Status = http.StatusOK
 
 	c.JSON(http.StatusOK, response)

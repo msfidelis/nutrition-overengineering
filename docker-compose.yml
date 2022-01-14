@@ -7,21 +7,21 @@ services:
   #     - "16686:16686"
   #   networks:
   #     - health
-  # health-api:
-  #   build:
-  #       context: ./health-api
-  #       dockerfile: Dockerfile.dev
-  #   environment:
-  #     - ENVIRONMENT=dev
-  #     - BMR_SERVICE_ENDPOINT=bmr-grpc:30000
-  #     - IMC_SERVICE_ENDPOINT=imc-grpc:30000
-  #     - RECOMMENDATIONS_SERVICE_ENDPOINT=recommendations-grpc:30000
-  #   ports:
-  #       - 8080:8080
-  #   volumes:
-  #       - ./health-api:/go/src/health-api
-  #   networks:
-  #     - health
+  health-api:
+    build:
+        context: ./health-api
+        dockerfile: Dockerfile.dev
+    environment:
+      - ENVIRONMENT=dev
+      - BMR_SERVICE_ENDPOINT=bmr-grpc:30000
+      - IMC_SERVICE_ENDPOINT=imc-grpc:30000
+      - RECOMMENDATIONS_SERVICE_ENDPOINT=recommendations-grpc:30000
+    ports:
+        - 8080:8080
+    volumes:
+        - ./health-api:/go/src/health-api
+    networks:
+      - health
   bmr-grpc:
     build:
         context: ./bmr-grpc-service

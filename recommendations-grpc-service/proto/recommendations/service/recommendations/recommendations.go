@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"recommendations-grpc-service/pkg/logger"
+	"recommendations-grpc-service/pkg/services/calories"
 	"recommendations-grpc-service/pkg/services/proteins"
 	"recommendations-grpc-service/pkg/services/water"
 
@@ -35,7 +36,7 @@ func (s *Server) SayHello(ctx context.Context, in *Message) (*Response, error) {
 	connWater, errWater := grpc.Dial(waterEndpoint, grpc.WithInsecure())
 	if errWater != nil {
 		log.Error().
-			Str("Service", "imc").
+			Str("Service", "water").
 			Str("Error", errWater.Error()).
 			Msg("Failed to create gRPC Connection with Water Consume Service")
 	}
@@ -119,10 +120,33 @@ func (s *Server) SayHello(ctx context.Context, in *Message) (*Response, error) {
 	}
 	defer connCalories.Close()
 
+	caloriesClient := calories.NewCaloriesServiceClient(connCalories)
+	resCalories, err := caloriesClient.SayHello(context.Background(), &calories.Message{
+		Necessity: in.Calories,
+	})
+
+	if err != nil {
+		log.Error().
+			Str("Service", "errCalories").
+			Str("Error", err.Error()).
+			Msg("Failed consume errCalories service")
+	}
+
+	log.Info().
+		Str("Service", "calories").
+		Float64("Necessity", in.Calories).
+		Float64("Maintain", resCalories.Maintain).
+		Float64("Loss", resCalories.Loss).
+		Float64("Gain", resCalories.Gain).
+		Msg("Calories necessity calculated")
+
 	return &Response{
-		WaterValue:    resWater.Value,
-		WaterUnit:     resWater.Unit,
-		ProteinsValue: resProteins.Value,
-		ProteinsUnit:  resProteins.Unit,
+		WaterValue:         resWater.Value,
+		WaterUnit:          resWater.Unit,
+		ProteinsValue:      resProteins.Value,
+		ProteinsUnit:       resProteins.Unit,
+		CaloriesToLoss:     resCalories.Loss,
+		CaloriesToGain:     resCalories.Gain,
+		CaloriesToMaintein: resCalories.Maintain,
 	}, nil
 }
