@@ -18,6 +18,15 @@ import (
 
 	_ "github.com/msfidelis/health-api/docs"
 
+	// Jaeger
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.opentelemetry.io/otel"
+	// "go.opentelemetry.io/otel/attribute"
+	stdout "go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	"go.opentelemetry.io/otel/propagation"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	// oteltrace "go.opentelemetry.io/otel/trace"
+
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
@@ -25,9 +34,19 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"context"
 )
 
+var tracer = otel.Tracer("gin-server")
+
 func main() {
+
+	tp := initTracer()
+	defer func() {
+		if err := tp.Shutdown(context.Background()); err != nil {
+			log.Printf("Error shutting down tracer provider: %v", err)
+		}
+	}()
 
 	router := gin.New()
 
@@ -72,6 +91,7 @@ func main() {
 	router.Use(p.Instrument())
 	router.Use(gin.Recovery())
 	router.Use(chaos.Load())
+	router.Use(otelgin.Middleware("my-server"))
 
 	// Healthcheck Router
 	router.GET("/healthcheck", healthcheck.Ok)
@@ -87,4 +107,19 @@ func main() {
 	router.POST("/calculator", calculator.Post)
 
 	router.Run()
+}
+
+func initTracer() *sdktrace.TracerProvider {
+	exporter, err := stdout.New(stdout.WithPrettyPrint())
+	if err != nil {
+		// log.Fatal(err)
+		fmt.Println("Failed to init tracer", err)
+	}
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithBatcher(exporter),
+	)
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+	return tp
 }

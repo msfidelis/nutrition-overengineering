@@ -1,12 +1,12 @@
-FROM golang:1.15 AS builder
-
-# Install Air
-RUN go get -u github.com/cosmtrek/air
+FROM golang:1.17 AS builder
 
 WORKDIR $GOPATH/src/bmr-grpc-service
 
 COPY . ./
 
 RUN pwd; ls -lha
+
+# Install Air
+RUN go get -u github.com/cosmtrek/air@v1.28
 
 CMD ["air"]

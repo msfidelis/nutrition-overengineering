@@ -1,12 +1,12 @@
 version: '3.7'
 services:
-  # jaeger:
-  #   image: jaegertracing/all-in-one:latest
-  #   ports:
-  #     - "6831:6831/udp"
-  #     - "16686:16686"
-  #   networks:
-  #     - health
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "6831:6831/udp"
+      - "16686:16686"
+    networks:
+      - health
   health-api:
     build:
         context: ./health-api
@@ -96,19 +96,6 @@ services:
     volumes:
         - ./calories-grpc-service:/go/src/calories-grpc-service
     networks:
-      - health  
-  # hotrod:
-  #   image: jaegertracing/example-hotrod:latest
-  #   ports: 
-  #     - "8080:8080"
-  #   command: ["all"]
-  #   environment:
-  #     - JAEGER_AGENT_HOST=jaeger
-  #     - JAEGER_AGENT_PORT=6831
-  #   networks:
-  #     - health
-  #   depends_on:
-  #     - jaeger
-
+      - health
 networks:
   health:
