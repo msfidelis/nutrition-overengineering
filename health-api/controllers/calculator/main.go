@@ -10,7 +10,11 @@ import (
 	"github.com/msfidelis/health-api/pkg/services/bmr"
 	"github.com/msfidelis/health-api/pkg/services/imc"
 	"github.com/msfidelis/health-api/pkg/services/recommendations"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type Request struct {
@@ -81,6 +85,11 @@ func Post(c *gin.Context) {
 	var response Response
 	var request Request
 
+	// Endpoint Span
+	span := trace.SpanFromContext(c.Request.Context())
+	span.SetName("Nutrition Calc Service")
+	tr := otel.Tracer("health-api")
+
 	log := logger.Instance()
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -88,13 +97,28 @@ func Post(c *gin.Context) {
 		return
 	}
 
+	span.SetAttributes(
+		attribute.String("request.Gender", request.Gender),
+		attribute.Float64("request.Weight", request.Weight),
+		attribute.Float64("request.Height", request.Height),
+		attribute.String("request.ActivityIntensity", request.ActivityIntensity),
+		attribute.Int("request.Age", request.Age),
+	)
+
 	// BMR
+	_, spanBMR := tr.Start(c.Request.Context(), "BMR Service Call")
+
 	bmrEndpoint := os.Getenv("BMR_SERVICE_ENDPOINT")
 
 	log.Info().
 		Str("Service", "bmr").
 		Str("BMR_SERVICE_ENDPOINT", bmrEndpoint).
 		Msg("Creating remote connection with gRPC Endpoint for BMR Service")
+
+	spanBMR.SetAttributes(
+		attribute.String("Service", "bmr"),
+		attribute.String("BMR_SERVICE_ENDPOINT", bmrEndpoint),
+	)
 
 	var conn *grpc.ClientConn
 	conn, err := grpc.Dial(bmrEndpoint, grpc.WithInsecure())
@@ -103,10 +127,24 @@ func Post(c *gin.Context) {
 			Str("Service", "bmr").
 			Str("Error", err.Error()).
 			Msg("Failed to create gRPC Connection with BMR Service")
+
+		spanBMR.SetAttributes(
+			attribute.String("Service", "bmr"),
+			attribute.String("Error", err.Error()),
+			attribute.String("Message", "Failed to create gRPC Connection with BMR Service"),
+		)
 	}
 	defer conn.Close()
 
 	bmrClient := bmr.NewBMRServiceClient(conn)
+
+	spanBMR.SetAttributes(
+		attribute.String("grpc.request.Gender", request.Gender),
+		attribute.Float64("grpc.request.Weight", request.Weight),
+		attribute.Float64("grpc.request.Height", request.Height),
+		attribute.String("grpc.request.ActivityIntensity", request.ActivityIntensity),
+	)
+
 	resBMR, err := bmrClient.SayHello(context.Background(), &bmr.Message{
 		Gender:   request.Gender,
 		Weight:   request.Weight,
@@ -114,13 +152,27 @@ func Post(c *gin.Context) {
 		Activity: request.ActivityIntensity,
 	})
 
+	spanBMR.SetAttributes(
+		attribute.Float64("grpc.response.BMR", resBMR.Bmr),
+		attribute.Float64("grpc.response.Necessity", resBMR.Necessity),
+		attribute.String("grpc.response.Unity", "kcal"),
+	)
+
+	defer spanBMR.End()
+
 	// IMC
+	_, spanIMC := tr.Start(c.Request.Context(), "IMC Service Call")
 	imcEndpoint := os.Getenv("IMC_SERVICE_ENDPOINT")
 
 	log.Info().
 		Str("Service", "imc").
 		Str("IMC_SERVICE_ENDPOINT", imcEndpoint).
 		Msg("Creating remote connection with gRPC Endpoint for IMC Service")
+
+	spanIMC.SetAttributes(
+		attribute.String("Service", "imc"),
+		attribute.String("IMC_SERVICE_ENDPOINT", imcEndpoint),
+	)
 
 	var connIMC *grpc.ClientConn
 	connIMC, errIMC := grpc.Dial(imcEndpoint, grpc.WithInsecure())
@@ -129,22 +181,47 @@ func Post(c *gin.Context) {
 			Str("Service", "imc").
 			Str("Error", err.Error()).
 			Msg("Failed to create gRPC Connection with IMC Service")
+
+		spanIMC.SetAttributes(
+			attribute.String("Service", "imc"),
+			attribute.String("Error", err.Error()),
+			attribute.String("Message", "Failed to create gRPC Connection with IMC Service"),
+		)
 	}
 	defer connIMC.Close()
 
 	imcClient := imc.NewIMCServiceClient(connIMC)
+
+	spanIMC.SetAttributes(
+		attribute.Float64("grpc.request.Weight", request.Weight),
+		attribute.Float64("grpc.request.Height", request.Height),
+	)
+
 	resIMC, err := imcClient.SayHello(context.Background(), &imc.Message{
 		Weight: request.Weight,
 		Height: request.Height,
 	})
 
+	spanIMC.SetAttributes(
+		attribute.Float64("grpc.response.Imc", resIMC.Imc),
+		attribute.String("grpc.response.Class", resIMC.Class),
+	)
+
+	defer spanIMC.End()
+
 	// Recommendations
+	_, spanRecommendations := tr.Start(c.Request.Context(), "Recommendations Service Call")
 	recommendationsEndpoint := os.Getenv("RECOMMENDATIONS_SERVICE_ENDPOINT")
 
 	log.Info().
 		Str("Service", "recommendations").
 		Str("RECOMMENDATIONS_SERVICE_ENDPOINT", recommendationsEndpoint).
 		Msg("Creating remote connection with gRPC Endpoint for Recommendation Service")
+
+	spanRecommendations.SetAttributes(
+		attribute.String("Service", "recommendations"),
+		attribute.String("RECOMMENDATIONS_SERVICE_ENDPOINT", recommendationsEndpoint),
+	)
 
 	var connRecommendations *grpc.ClientConn
 	connRecommendations, errRecommendations := grpc.Dial(recommendationsEndpoint, grpc.WithInsecure())
@@ -153,15 +230,40 @@ func Post(c *gin.Context) {
 			Str("Service", "recommendations").
 			Str("Error", err.Error()).
 			Msg("Failed to create gRPC Connection with Recommendations Service")
+
+		spanRecommendations.SetAttributes(
+			attribute.String("Service", "recommendations"),
+			attribute.String("Error", err.Error()),
+			attribute.String("Message", "Failed to create gRPC Connection with Recommendations Service"),
+		)
 	}
 	defer connRecommendations.Close()
 
 	recommendationsClient := recommendations.NewRecomendationsServiceClient(connRecommendations)
+
+	spanRecommendations.SetAttributes(
+		attribute.String("grpc.request.Gender", request.Gender),
+		attribute.Float64("grpc.request.Weight", request.Weight),
+		attribute.Float64("grpc.request.Calories", resBMR.Necessity),
+	)
+
 	resRecommendations, err := recommendationsClient.SayHello(context.Background(), &recommendations.Message{
 		Weight:   request.Weight,
 		Height:   request.Height,
 		Calories: resBMR.Necessity,
 	})
+
+	spanRecommendations.SetAttributes(
+		attribute.Int64("grpc.response.Protein", resRecommendations.ProteinsValue),
+		attribute.Float64("grpc.response.Water", resRecommendations.WaterValue),
+		attribute.Float64("grpc.response.Calories.Maintain", resRecommendations.CaloriesToMaintein),
+		attribute.Float64("grpc.response.Calories.Gain", resRecommendations.CaloriesToGain),
+		attribute.Float64("grpc.response.Calories.Loss", resRecommendations.CaloriesToLoss),
+	)
+
+	defer spanRecommendations.End()
+
+	_, spanResponse := tr.Start(c.Request.Context(), "HTTP Response")
 
 	// BMR Response
 	response.Basal.BMR.Value = resBMR.Bmr
@@ -192,5 +294,33 @@ func Post(c *gin.Context) {
 	response.Recomendations.Calories.Loss.Unit = response.Basal.Necessity.Unit
 	response.Status = http.StatusOK
 
+	spanResponse.SetAttributes(
+		attribute.Float64("http.response.Basal.BMR.Value", response.Basal.BMR.Value),
+		attribute.String("http.response.Basal.BMR.Unit", response.Basal.BMR.Unit),
+		attribute.Float64("http.response.Basal.Necessity.Value", response.Basal.Necessity.Value),
+		attribute.String("http.response.Basal.Necessity.Unit", response.Basal.Necessity.Unit),
+
+		attribute.Float64("http.response.Imc.Result", response.Imc.Result),
+		attribute.String("http.response.Imc.Class", response.Imc.Class),
+
+		attribute.Int("http.response.HealthInfo.Age", request.Age),
+		attribute.String("http.response.HealthInfo.Gender", request.Gender),
+		attribute.Float64("http.response.HealthInfo.Weight", request.Weight),
+		attribute.Float64("http.response.HealthInfo.Height", request.Height),
+		attribute.String("http.response.HealthInfo.ActivityIntensity", request.ActivityIntensity),
+
+		attribute.Int64("http.response.Recomendations.Protein.Value", resRecommendations.ProteinsValue),
+		attribute.String("http.response.Recomendations.Protein.Unit", resRecommendations.ProteinsUnit),
+		attribute.Float64("http.response.Water.Value", resRecommendations.WaterValue),
+		attribute.String("http.response.Water.Unit", resRecommendations.WaterUnit),
+		attribute.Float64("http.response.Recomendations.Calories.Maintain.Value", resRecommendations.CaloriesToMaintein),
+		attribute.String("http.response.Recomendations.Calories.Maintain.Unit", response.Basal.Necessity.Unit),
+		attribute.Float64("http.response.Recomendations.Calories.Gain.Value", resRecommendations.CaloriesToGain),
+		attribute.String("http.response.Recomendations.Calories.Gain.Unit", response.Basal.Necessity.Unit),
+		attribute.Float64("http.response.Recomendations.Calories.Loss.Value", resRecommendations.CaloriesToLoss),
+		attribute.String("http.response.Recomendations.Calories.Loss.Unit", response.Basal.Necessity.Unit),
+	)
+
 	c.JSON(http.StatusOK, response)
+	defer spanResponse.End()
 }

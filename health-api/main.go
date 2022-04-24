@@ -21,20 +21,25 @@ import (
 	// Jaeger
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/otel"
+
 	// "go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/jaeger"
 	stdout "go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
+
 	// oteltrace "go.opentelemetry.io/otel/trace"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
+	"context"
 	"fmt"
 	"os"
 	"strconv"
 	"time"
-	"context"
 )
 
 var tracer = otel.Tracer("gin-server")
@@ -91,7 +96,7 @@ func main() {
 	router.Use(p.Instrument())
 	router.Use(gin.Recovery())
 	router.Use(chaos.Load())
-	router.Use(otelgin.Middleware("my-server"))
+	router.Use(otelgin.Middleware("health-api"))
 
 	// Healthcheck Router
 	router.GET("/healthcheck", healthcheck.Ok)
@@ -112,12 +117,22 @@ func main() {
 func initTracer() *sdktrace.TracerProvider {
 	exporter, err := stdout.New(stdout.WithPrettyPrint())
 	if err != nil {
-		// log.Fatal(err)
 		fmt.Println("Failed to init tracer", err)
 	}
+
+	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint("http://jaeger:14268/api/traces")))
+	if err != nil {
+		fmt.Println("Failed to init jaeger", err)
+	}
+
 	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exp),
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
 		sdktrace.WithBatcher(exporter),
+		sdktrace.WithResource(resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String("health-api"),
+		)),
 	)
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
