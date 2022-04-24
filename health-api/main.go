@@ -7,6 +7,7 @@ import (
 	"github.com/msfidelis/health-api/controllers/readiness"
 	"github.com/msfidelis/health-api/controllers/version"
 	"github.com/msfidelis/health-api/pkg/memory_cache"
+	"github.com/msfidelis/health-api/pkg/tracer"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -20,15 +21,8 @@ import (
 
 	// Jaeger
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
-	"go.opentelemetry.io/otel"
 
 	// "go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/jaeger"
-	stdout "go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
-	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/resource"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 
 	// oteltrace "go.opentelemetry.io/otel/trace"
 
@@ -42,11 +36,11 @@ import (
 	"time"
 )
 
-var tracer = otel.Tracer("gin-server")
+// var tracer = otel.Tracer("gin-server")
 
 func main() {
 
-	tp := initTracer()
+	tp := tracer.InitTracer()
 	defer func() {
 		if err := tp.Shutdown(context.Background()); err != nil {
 			log.Printf("Error shutting down tracer provider: %v", err)
@@ -112,29 +106,4 @@ func main() {
 	router.POST("/calculator", calculator.Post)
 
 	router.Run()
-}
-
-func initTracer() *sdktrace.TracerProvider {
-	exporter, err := stdout.New(stdout.WithPrettyPrint())
-	if err != nil {
-		fmt.Println("Failed to init tracer", err)
-	}
-
-	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint("http://jaeger:14268/api/traces")))
-	if err != nil {
-		fmt.Println("Failed to init jaeger", err)
-	}
-
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exp),
-		sdktrace.WithSampler(sdktrace.AlwaysSample()),
-		sdktrace.WithBatcher(exporter),
-		sdktrace.WithResource(resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceNameKey.String("health-api"),
-		)),
-	)
-	otel.SetTracerProvider(tp)
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-	return tp
 }

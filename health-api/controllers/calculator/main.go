@@ -14,6 +14,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -121,7 +122,13 @@ func Post(c *gin.Context) {
 	)
 
 	var conn *grpc.ClientConn
-	conn, err := grpc.Dial(bmrEndpoint, grpc.WithInsecure())
+	conn, err := grpc.Dial(
+		bmrEndpoint,
+		grpc.WithInsecure(),
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+	)
+
 	if err != nil {
 		log.Error().
 			Str("Service", "bmr").

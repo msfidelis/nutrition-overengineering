@@ -16,6 +16,7 @@ require (
 	github.com/tkanos/gonfig v0.0.0-20181112185242-896f3d81fadf
 	github.com/zcalusic/sysinfo v0.0.0-20200228145645-a159d7cc708b
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.31.0
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.31.0 // indirect
 	go.opentelemetry.io/otel v1.6.3
 	go.opentelemetry.io/otel/exporters/jaeger v1.6.3 // indirect
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.6.3
@@ -23,6 +24,6 @@ require (
 	go.opentelemetry.io/otel/trace v1.6.3 // indirect
 	golang.org/x/net v0.0.0-20201224014010-6772e930b67b // indirect
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
-	google.golang.org/grpc v1.27.0
-	google.golang.org/protobuf v1.26.0-rc.1
+	google.golang.org/grpc v1.45.0
+	google.golang.org/protobuf v1.26.0
 )
