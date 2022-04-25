@@ -18,8 +18,7 @@ func InitTracer() *sdktrace.TracerProvider {
 		fmt.Println("Failed to init tracer", err)
 	}
 
-	exp, err := jaeger.New(
-		jaeger.WithCollectorEndpoint(jaeger.WithEndpoint("http://jaeger:14268/api/traces")))
+	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint("http://jaeger:14268/api/traces")))
 	if err != nil {
 		fmt.Println("Failed to init jaeger", err)
 	}
@@ -30,18 +29,10 @@ func InitTracer() *sdktrace.TracerProvider {
 		sdktrace.WithBatcher(exporter),
 		sdktrace.WithResource(resource.NewWithAttributes(
 			semconv.SchemaURL,
-			semconv.ServiceNameKey.String("health-api"),
+			semconv.ServiceNameKey.String("imc-grpc-service"),
 		)),
 	)
-
-	otel.SetTextMapPropagator(
-		propagation.NewCompositeTextMapPropagator(
-			propagation.TraceContext{},
-			propagation.Baggage{},
-		),
-	)
-
 	otel.SetTracerProvider(tp)
-
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 	return tp
 }

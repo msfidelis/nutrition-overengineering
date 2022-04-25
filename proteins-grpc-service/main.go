@@ -1,20 +1,32 @@
 package main
 
 import (
+	"context"
 	"net"
 	"os"
 	"proteins-grpc-service/pkg/logger"
+	"proteins-grpc-service/pkg/tracer"
 	"proteins-grpc-service/proto/proteins/service/proteins"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
 	"google.golang.org/grpc"
+
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 )
 
 func main() {
 
 	logInternal := logger.Instance()
+
+	tp := tracer.InitTracer()
+
+	defer func() {
+		if err := tp.Shutdown(context.Background()); err != nil {
+			log.Printf("Error shutting down tracer provider: %v", err)
+		}
+	}()
 
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
@@ -37,7 +49,10 @@ func main() {
 
 	s := proteins.Server{}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
+	)
 
 	proteins.RegisterProteinsServiceServer(grpcServer, &s)
 

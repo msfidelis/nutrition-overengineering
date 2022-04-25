@@ -27,8 +27,6 @@ func main() {
 		}
 	}()
 
-	// opentracing.SetGlobalTracer(tp)
-
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
 	log.Logger = log.Output(

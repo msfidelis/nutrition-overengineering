@@ -11,6 +11,8 @@ import (
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 )
 
 type Server struct {
@@ -33,7 +35,12 @@ func (s *Server) SayHello(ctx context.Context, in *Message) (*Response, error) {
 		Msg("Creating remote connection with gRPC Endpoint for Water Consume Service")
 
 	var connWater *grpc.ClientConn
-	connWater, errWater := grpc.Dial(waterEndpoint, grpc.WithInsecure())
+	connWater, errWater := grpc.Dial(
+		waterEndpoint,
+		grpc.WithInsecure(),
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+	)
 	if errWater != nil {
 		log.Error().
 			Str("Service", "water").
@@ -43,7 +50,7 @@ func (s *Server) SayHello(ctx context.Context, in *Message) (*Response, error) {
 	defer connWater.Close()
 
 	waterClient := water.NewWaterServiceClient(connWater)
-	resWater, err := waterClient.SayHello(context.Background(), &water.Message{
+	resWater, err := waterClient.SayHello(ctx, &water.Message{
 		Weight: in.Weight,
 		Height: in.Height,
 	})
@@ -76,7 +83,12 @@ func (s *Server) SayHello(ctx context.Context, in *Message) (*Response, error) {
 		Msg("Creating remote connection with gRPC Endpoint for Proteins Consume Service")
 
 	var connProteins *grpc.ClientConn
-	connProteins, errProteins := grpc.Dial(proteinsEndpoint, grpc.WithInsecure())
+	connProteins, errProteins := grpc.Dial(
+		proteinsEndpoint,
+		grpc.WithInsecure(),
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+	)
 	if err != nil {
 		log.Error().
 			Str("Service", "proteins").
@@ -86,7 +98,7 @@ func (s *Server) SayHello(ctx context.Context, in *Message) (*Response, error) {
 	defer connProteins.Close()
 
 	proteinsClient := proteins.NewProteinsServiceClient(connProteins)
-	resProteins, err := proteinsClient.SayHello(context.Background(), &proteins.Message{
+	resProteins, err := proteinsClient.SayHello(ctx, &proteins.Message{
 		Weight: in.Weight,
 	})
 
@@ -111,7 +123,12 @@ func (s *Server) SayHello(ctx context.Context, in *Message) (*Response, error) {
 		Msg("Creating remote connection with gRPC Endpoint for Calories Consume Service")
 
 	var connCalories *grpc.ClientConn
-	connCalories, errCalories := grpc.Dial(caloriesEndpoint, grpc.WithInsecure())
+	connCalories, errCalories := grpc.Dial(
+		caloriesEndpoint,
+		grpc.WithInsecure(),
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+	)
 	if errCalories != nil {
 		log.Error().
 			Str("Service", "calories").
@@ -121,7 +138,7 @@ func (s *Server) SayHello(ctx context.Context, in *Message) (*Response, error) {
 	defer connCalories.Close()
 
 	caloriesClient := calories.NewCaloriesServiceClient(connCalories)
-	resCalories, err := caloriesClient.SayHello(context.Background(), &calories.Message{
+	resCalories, err := caloriesClient.SayHello(ctx, &calories.Message{
 		Necessity: in.Calories,
 	})
 

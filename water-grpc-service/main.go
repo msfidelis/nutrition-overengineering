@@ -1,20 +1,32 @@
 package main
 
 import (
+	"context"
 	"net"
 	"os"
 	"water-grpc-service/pkg/logger"
+	"water-grpc-service/pkg/tracer"
 	"water-grpc-service/proto/water/service/water"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
 	"google.golang.org/grpc"
+
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 )
 
 func main() {
 
 	logInternal := logger.Instance()
+
+	tp := tracer.InitTracer()
+
+	defer func() {
+		if err := tp.Shutdown(context.Background()); err != nil {
+			log.Printf("Error shutting down tracer provider: %v", err)
+		}
+	}()
 
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
@@ -37,7 +49,10 @@ func main() {
 
 	s := water.Server{}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
+	)
 
 	water.RegisterWaterServiceServer(grpcServer, &s)
 

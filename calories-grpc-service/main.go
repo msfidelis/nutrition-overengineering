@@ -2,7 +2,9 @@ package main
 
 import (
 	"calories-grpc-service/pkg/logger"
+	"calories-grpc-service/pkg/tracer"
 	"calories-grpc-service/proto/calories/service/calories"
+	"context"
 	"net"
 	"os"
 
@@ -10,12 +12,20 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"google.golang.org/grpc"
+
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 )
 
 func main() {
 
 	logInternal := logger.Instance()
+	tp := tracer.InitTracer()
 
+	defer func() {
+		if err := tp.Shutdown(context.Background()); err != nil {
+			log.Printf("Error shutting down tracer provider: %v", err)
+		}
+	}()
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
 	log.Logger = log.Output(
@@ -37,7 +47,10 @@ func main() {
 
 	s := calories.Server{}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
+	)
 
 	calories.RegisterCaloriesServiceServer(grpcServer, &s)
 

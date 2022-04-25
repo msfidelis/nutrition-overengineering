@@ -1,7 +1,6 @@
 package calculator
 
 import (
-	"context"
 	"net/http"
 	"os"
 
@@ -107,7 +106,7 @@ func Post(c *gin.Context) {
 	)
 
 	// BMR
-	_, spanBMR := tr.Start(c.Request.Context(), "BMR Service Call")
+	ctxBMR, spanBMR := tr.Start(c.Request.Context(), "BMR Service Call")
 
 	bmrEndpoint := os.Getenv("BMR_SERVICE_ENDPOINT")
 
@@ -152,7 +151,7 @@ func Post(c *gin.Context) {
 		attribute.String("grpc.request.ActivityIntensity", request.ActivityIntensity),
 	)
 
-	resBMR, err := bmrClient.SayHello(context.Background(), &bmr.Message{
+	resBMR, err := bmrClient.SayHello(ctxBMR, &bmr.Message{
 		Gender:   request.Gender,
 		Weight:   request.Weight,
 		Height:   request.Height,
@@ -168,7 +167,7 @@ func Post(c *gin.Context) {
 	defer spanBMR.End()
 
 	// IMC
-	_, spanIMC := tr.Start(c.Request.Context(), "IMC Service Call")
+	ctxIMC, spanIMC := tr.Start(c.Request.Context(), "IMC Service Call")
 	imcEndpoint := os.Getenv("IMC_SERVICE_ENDPOINT")
 
 	log.Info().
@@ -182,7 +181,13 @@ func Post(c *gin.Context) {
 	)
 
 	var connIMC *grpc.ClientConn
-	connIMC, errIMC := grpc.Dial(imcEndpoint, grpc.WithInsecure())
+	connIMC, errIMC := grpc.Dial(
+		imcEndpoint,
+		grpc.WithInsecure(),
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+	)
+
 	if errIMC != nil {
 		log.Error().
 			Str("Service", "imc").
@@ -204,7 +209,7 @@ func Post(c *gin.Context) {
 		attribute.Float64("grpc.request.Height", request.Height),
 	)
 
-	resIMC, err := imcClient.SayHello(context.Background(), &imc.Message{
+	resIMC, err := imcClient.SayHello(ctxIMC, &imc.Message{
 		Weight: request.Weight,
 		Height: request.Height,
 	})
@@ -217,7 +222,7 @@ func Post(c *gin.Context) {
 	defer spanIMC.End()
 
 	// Recommendations
-	_, spanRecommendations := tr.Start(c.Request.Context(), "Recommendations Service Call")
+	ctxRecommendations, spanRecommendations := tr.Start(c.Request.Context(), "Recommendations Service Call")
 	recommendationsEndpoint := os.Getenv("RECOMMENDATIONS_SERVICE_ENDPOINT")
 
 	log.Info().
@@ -231,7 +236,13 @@ func Post(c *gin.Context) {
 	)
 
 	var connRecommendations *grpc.ClientConn
-	connRecommendations, errRecommendations := grpc.Dial(recommendationsEndpoint, grpc.WithInsecure())
+	connRecommendations, errRecommendations := grpc.Dial(
+		recommendationsEndpoint,
+		grpc.WithInsecure(),
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+	)
+
 	if errRecommendations != nil {
 		log.Error().
 			Str("Service", "recommendations").
@@ -254,7 +265,7 @@ func Post(c *gin.Context) {
 		attribute.Float64("grpc.request.Calories", resBMR.Necessity),
 	)
 
-	resRecommendations, err := recommendationsClient.SayHello(context.Background(), &recommendations.Message{
+	resRecommendations, err := recommendationsClient.SayHello(ctxRecommendations, &recommendations.Message{
 		Weight:   request.Weight,
 		Height:   request.Height,
 		Calories: resBMR.Necessity,
