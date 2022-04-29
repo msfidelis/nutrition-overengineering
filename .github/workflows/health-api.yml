@@ -30,7 +30,7 @@ jobs:
         run: |
             export PATH=$PATH:$(go env GOPATH)/bin
             go get -u golang.org/x/lint/golint
-            golint -set_exit_status ./health-api/...
+            # golint -set_exit_status ./health-api/...
             
       - name: Install dependencies
         run: cd health-api; go get -u 
