@@ -20,7 +20,7 @@ func TestPkgConfigurationLoad(t *testing.T) {
 	t.Run("Assert Correct Env File", func(t *testing.T) {
 		configs := configuration.Load()
 		got := configs.Env
-		want := "test"
+		want := "prod"
 		if got != want {
 			t.Errorf("got %q want %q", got, want)
 		}
