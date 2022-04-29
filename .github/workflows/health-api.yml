@@ -60,8 +60,7 @@ jobs:
         working-directory: health-api
         run: docker tag health-api:latest fidelissauro/health-api:latest
 
-      - name: Docker Tag Latest Release
-        working-directory: health-api
+      - name: Docker Tag Release
         run: | 
           TAG=$(git describe --tags --abbrev=0)
           docker tag health-api:latest fidelissauro/health-api:$TAG
