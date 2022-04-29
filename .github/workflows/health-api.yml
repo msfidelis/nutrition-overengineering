@@ -79,3 +79,4 @@ jobs:
         run: |
           TAG=$(git describe --tags --abbrev=0)
           docker push fidelissauro/health-api:$TAG
+          
