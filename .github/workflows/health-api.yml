@@ -17,7 +17,6 @@ jobs:
           go-version: ${{ matrix.go-version }}
 
       - name: setup GOPATH into PATH
-        working-directory: health-api
         run: |
           echo "::set-env name=GOPATH::$(go env GOPATH)"
           echo "::add-path::$(go env GOPATH)/bin"
