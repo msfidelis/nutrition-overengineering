@@ -99,6 +99,22 @@ curl --location --request POST '0.0.0.0:8080/calculator' \
 }
 ```
 
+# Jaeger
+
+## Using Tracing between services 
+
+To use jaeger tracing you can specify environment variable called `JAEGER_COLLECTOR_ENDPOINT`. 
+
+```bash
+export JAEGER_COLLECTOR_ENDPOINT=http://jaeger:14268/api/traces
+```
+
+![Jaeger Tracing](.github/images/jaeger-tracing.png)
+
+![Jaeger Map](.github/images/jaeger-map.png)
+
+
+
 # TODO
 * Refactor communication lib 
 * Customize log lib for trace id
