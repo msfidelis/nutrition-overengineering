@@ -2,6 +2,7 @@ package tracer
 
 import (
 	"fmt"
+	"os"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/jaeger"
@@ -19,7 +20,12 @@ func InitTracer() *sdktrace.TracerProvider {
 	}
 
 	exp, err := jaeger.New(
-		jaeger.WithCollectorEndpoint(jaeger.WithEndpoint("http://jaeger:14268/api/traces")))
+		jaeger.WithCollectorEndpoint(
+			jaeger.WithEndpoint(
+				os.Getenv("JAEGER_COLLECTOR_ENDPOINT"),
+			),
+		),
+	)
 	if err != nil {
 		fmt.Println("Failed to init jaeger", err)
 	}

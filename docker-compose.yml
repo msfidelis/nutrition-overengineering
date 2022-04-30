@@ -17,6 +17,7 @@ services:
       - BMR_SERVICE_ENDPOINT=bmr-grpc:30000
       - IMC_SERVICE_ENDPOINT=imc-grpc:30000
       - RECOMMENDATIONS_SERVICE_ENDPOINT=recommendations-grpc:30000
+      - JAEGER_COLLECTOR_ENDPOINT=http://jaeger:14268/api/traces
     ports:
         - 8080:8080
     volumes:
@@ -29,6 +30,7 @@ services:
         dockerfile: Dockerfile.dev
     environment:
       - ENVIRONMENT=dev
+      - JAEGER_COLLECTOR_ENDPOINT=http://jaeger:14268/api/traces
     ports:
         - 30000:30000
     volumes:
@@ -41,6 +43,7 @@ services:
         dockerfile: Dockerfile.dev
     environment:
       - ENVIRONMENT=dev
+      - JAEGER_COLLECTOR_ENDPOINT=http://jaeger:14268/api/traces
     ports:
         - 30001:30000
     volumes:
@@ -56,6 +59,7 @@ services:
       - PROTEINS_SERVICE_ENDPOINT=proteins-grpc:30000
       - WATER_SERVICE_ENDPOINT=water-grpc:30000
       - CALORIES_SERVICE_ENDPOINT=calories-grpc:30000
+      - JAEGER_COLLECTOR_ENDPOINT=http://jaeger:14268/api/traces
     ports:
         - 30002:30000
     volumes:
@@ -68,6 +72,7 @@ services:
         dockerfile: Dockerfile.dev
     environment:
       - ENVIRONMENT=dev
+      - JAEGER_COLLECTOR_ENDPOINT=http://jaeger:14268/api/traces
     ports:
         - 30003:30000
     volumes:
@@ -80,6 +85,7 @@ services:
         dockerfile: Dockerfile.dev
     environment:
       - ENVIRONMENT=dev
+      - JAEGER_COLLECTOR_ENDPOINT=http://jaeger:14268/api/traces
     ports:
         - 30004:30000
     volumes:
@@ -92,6 +98,7 @@ services:
         dockerfile: Dockerfile.dev
     environment:
       - ENVIRONMENT=dev
+      - JAEGER_COLLECTOR_ENDPOINT=http://jaeger:14268/api/traces
     ports:
         - 30005:30000
     volumes:
