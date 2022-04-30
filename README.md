@@ -16,6 +16,18 @@ Application to calc healthcare and nutrition metrics, but using the most over en
 * calories-grpc: gRPC to calc calories ingestion necessity
 * frontend: VueJS SPA
 
+## Docker Images
+
+| Application                   | Image                                             | 
+|-------------------------------|---------------------------------------------------|
+| health-api                    | fidelissauro/health-api:latest                    |
+| bmr-grpc-service              | fidelissauro/bmr-grpc-service:latest              |
+| imc-grpc-service              | fidelissauro/imc-grpc-service:latest              |
+| water-grpc-service            | fidelissauro/water-grpc-service:latest            |
+| calories-grpc-service         | fidelissauro/calories-grpc-service:latest         |
+| proteins-grpc-service         | fidelissauro/proteins-grpc-service:latest         |
+| recommendations-grpc-service  | fidelissauro/recommendations-grpc-service:latest  | 
+
 ## Workflow 
 
 ![Workflow](.github/images/workflow.png)
