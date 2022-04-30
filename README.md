@@ -1,4 +1,4 @@
-# nutrition-overengineering
+# Nutrition Overengineering
 Application to calc healthcare and nutrition metrics, but using the most over engineered as possible
 
 > "Caraca Matheus, tu é idiota??? 
@@ -7,14 +7,14 @@ Application to calc healthcare and nutrition metrics, but using the most over en
 
 # Overenginner Microservices Summary
 
-* health-api: REST Interface for product. Using orchestrator pattern. 
-* bmr-grpc: gRPC Microservice to calc Basal Metabolic Rate
-* imc-grpc: gRPC Microservice to calc IMC 
-* recommendations-grpc: gRPC Microservice to summarize diet recommendations and contabilize Macros
-* proteins-grpc: gRPC Microservice to calc daily protein necessity
-* water-grpc: gRPC Microservice to calc daily water ingestion
-* calories-grpc: gRPC to calc calories ingestion necessity
-* frontend: VueJS SPA
+* `health-api`: REST Interface for product. Using orchestrator pattern. 
+* `bmr-grpc`: gRPC Microservice to calc Basal Metabolic Rate
+* `imc-grpc`: gRPC Microservice to calc IMC 
+* `recommendations-grpc`: gRPC Microservice to summarize diet recommendations and contabilize Macros
+* `proteins-grpc`: gRPC Microservice to calc daily protein necessity
+* `water-grpc`: gRPC Microservice to calc daily water ingestion
+* `calories-grpc`: gRPC to calc calories ingestion necessity
+* `frontend`: VueJS SPA
 
 ## Docker Images
 
@@ -100,13 +100,10 @@ curl --location --request POST '0.0.0.0:8080/calculator' \
 ```
 
 # TODO
-* Create communication across services 
 * Refactor communication lib 
 * Customize log lib for trace id
 * Error Handling and Retries
 * Implement Prometheus HTTP Endpoint
-* Implement Jaeger Tracing
-* Implement CI / CD to release Docker Images
 * Create Kubernetes Deployment
 * Create Istio Manifests to Service Mesh gRPC Optimizations
 
