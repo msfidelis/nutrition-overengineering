@@ -1,0 +1,152 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: health-api
+  name: health-api
+  namespace: nutrition
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: health-api
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"           
+      labels:
+        app: health-api
+        name: health-api
+        version: v1
+    spec:
+      containers:
+      - name: health-api
+        image: fidelissauro/health-api:latest
+        livenessProbe:
+          failureThreshold: 10
+          httpGet:
+            httpHeaders:
+            - name: Custom-Header
+              value: Awesome
+            path: /liveness
+            port: 8080
+          periodSeconds: 10
+        ports:
+        - containerPort: 8080
+          name: http
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 2048Mi
+        env:
+        - name: JAEGER_COLLECTOR_ENDPOINT
+          value: "http://jaeger-collector.istio-system.svc.cluster.local:14268/api/traces"  
+        - name: BMR_SERVICE_ENDPOINT
+          value: "bmr-grpc-service.nutrition.svc.cluster.local:30000"
+        - name: IMC_SERVICE_ENDPOINT
+          value: "imc-grpc-service.nutrition.svc.cluster.local:30000"
+        - name: RECOMMENDATIONS_SERVICE_ENDPOINT
+          value: "recommendations-grpc-service.nutrition.svc.cluster.local:30000"                    
+      terminationGracePeriodSeconds: 60
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: health-api
+  namespace: nutrition
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"    
+  labels:
+    app.kubernetes.io/name: health-api
+    app.kubernetes.io/instance: health-api 
+spec:
+  ports:
+  - name: web
+    port: 8080
+    protocol: TCP
+  selector:
+    app: health-api
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: health-api
+  namespace: nutrition
+spec:
+  maxReplicas: 6
+  minReplicas: 1
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: health-api
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: health-api
+  namespace: nutrition
+spec:
+  host: health-api
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+    trafficPolicy:
+      connectionPool:
+        tcp:
+          maxConnections: 100
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: health-api-gateway
+  namespace: nutrition
+spec:
+  selector:
+    istio: ingressgateway 
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "health-api"
+    - "health-api.local.cluster"
+    - "health-api.nutrition.svc.cluster.local"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: health-api-gateway
+  namespace: nutrition
+spec:
+  hosts:
+  - "health-api.local.cluster"
+  - "health-api"
+  gateways:
+  - health-api-gateway
+  http:
+  - route:
+    - destination:
+        host: health-api
+        port:
+          number: 8080
+    retries:
+      attempts: 3
+      perTryTimeout: 500ms
+      retryOn: 5xx,gateway-error,connect-failure,refused-stream
+---

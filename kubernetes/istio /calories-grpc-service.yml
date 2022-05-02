@@ -1,0 +1,151 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: calories-grpc-service
+  name: calories-grpc-service
+  namespace: nutrition
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: calories-grpc-service
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"           
+      labels:
+        app: calories-grpc-service
+        name: calories-grpc-service
+        version: v1
+    spec:
+      containers:
+      - name: calories-grpc-service
+        image: fidelissauro/calories-grpc-service:latest
+        # livenessProbe:
+        #   failureThreshold: 10
+        #   httpGet:
+        #     httpHeaders:
+        #     - name: Custom-Header
+        #       value: Awesome
+        #     path: /liveness
+        #     port: 8080
+        #   periodSeconds: 10
+        ports:
+        - containerPort: 30000
+          name: grpc
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 2048Mi
+        env:
+        - name: JAEGER_COLLECTOR_ENDPOINT
+          value: "http://jaeger-collector.istio-system.svc.cluster.local:14268/api/traces"  
+        - name: BMR_SERVICE_ENDPOINT
+          value: "bmr-grpc.nutrition.svc.cluster.local"
+        - name: IMC_SERVICE_ENDPOINT
+          value: "imc-grpc.nutrition.svc.cluster.local"
+        - name: RECOMMENDATIONS_SERVICE_ENDPOINT
+          value: "recommendations.nutrition.svc.cluster.local"                    
+      terminationGracePeriodSeconds: 60
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: calories-grpc-service
+  namespace: nutrition
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"    
+  labels:
+    app.kubernetes.io/name: calories-grpc-service
+    app.kubernetes.io/instance: calories-grpc-service 
+spec:
+  ports:
+  - name: grpc
+    port: 30000
+    protocol: TCP
+  selector:
+    app: calories-grpc-service
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: calories-grpc-service
+  namespace: nutrition
+spec:
+  maxReplicas: 6
+  minReplicas: 1
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: calories-grpc-service
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: calories-grpc-service
+  namespace: nutrition
+spec:
+  host: calories-grpc-service
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+    trafficPolicy:
+      connectionPool:
+        tcp:
+          maxConnections: 100
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: calories-grpc-service-gateway
+  namespace: nutrition
+spec:
+  selector:
+    istio: ingressgateway 
+  servers:
+  - port:
+      number: 30000
+      name: grpc
+      protocol: TCP
+    hosts:
+    - "calories-grpc-service"
+    - "calories-grpc-service.local.cluster"
+    - "calories-grpc-service.nutrition.svc.cluster.local"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: calories-grpc-service-gateway
+  namespace: nutrition
+spec:
+  hosts:
+  - "calories-grpc-service"
+  gateways:
+  - calories-grpc-service-gateway
+  http:
+  - route:
+    - destination:
+        host: calories-grpc-service
+        port:
+          number: 30000
+    retries:
+      attempts: 3
+      perTryTimeout: 500ms
+      retryOn: 5xx,gateway-error,connect-failure,refused-stream
+---
