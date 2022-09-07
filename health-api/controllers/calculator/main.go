@@ -2,7 +2,6 @@ package calculator
 
 import (
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/msfidelis/health-api/pkg/logger"
@@ -11,9 +10,7 @@ import (
 	"github.com/msfidelis/health-api/pkg/services/recommendations"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
-	"google.golang.org/grpc"
 
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -163,53 +160,25 @@ func Post(c *gin.Context) {
 
 	// Recommendations
 	ctxRecommendations, spanRecommendations := tr.Start(c.Request.Context(), "Recommendations Service Call")
-	recommendationsEndpoint := os.Getenv("RECOMMENDATIONS_SERVICE_ENDPOINT")
+	defer spanRecommendations.End()
 
-	log.Info().
-		Str("Service", "recommendations").
-		Str("RECOMMENDATIONS_SERVICE_ENDPOINT", recommendationsEndpoint).
-		Msg("Creating remote connection with gRPC Endpoint for Recommendation Service")
+	resRecommendations, err := recommendations.Call(ctxRecommendations, request.Weight, request.Height, resBMR.Necessity, tr)
 
-	spanRecommendations.SetAttributes(
-		attribute.String("Service", "recommendations"),
-		attribute.String("RECOMMENDATIONS_SERVICE_ENDPOINT", recommendationsEndpoint),
-	)
-
-	var connRecommendations *grpc.ClientConn
-	connRecommendations, errRecommendations := grpc.Dial(
-		recommendationsEndpoint,
-		grpc.WithInsecure(),
-		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
-		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
-	)
-
-	if errRecommendations != nil {
+	if err != nil {
 		log.Error().
-			Str("Service", "recommendations").
+			Str("Service", "imc").
 			Str("Error", err.Error()).
-			Msg("Failed to create gRPC Connection with Recommendations Service")
+			Msg("Error to consume gRPC Service")
 
-		spanRecommendations.SetAttributes(
-			attribute.String("Service", "recommendations"),
+		spanBMR.SetAttributes(
 			attribute.String("Error", err.Error()),
-			attribute.String("Message", "Failed to create gRPC Connection with Recommendations Service"),
 		)
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Error to create gRPC Connection with IMC Service",
+			"error":   err.Error(),
+		})
 	}
-	defer connRecommendations.Close()
-
-	recommendationsClient := recommendations.NewRecomendationsServiceClient(connRecommendations)
-
-	spanRecommendations.SetAttributes(
-		attribute.String("grpc.request.Gender", request.Gender),
-		attribute.Float64("grpc.request.Weight", request.Weight),
-		attribute.Float64("grpc.request.Calories", resBMR.Necessity),
-	)
-
-	resRecommendations, err := recommendationsClient.SayHello(ctxRecommendations, &recommendations.Message{
-		Weight:   request.Weight,
-		Height:   request.Height,
-		Calories: resBMR.Necessity,
-	})
 
 	spanRecommendations.SetAttributes(
 		attribute.Int64("grpc.response.Protein", resRecommendations.ProteinsValue),
@@ -218,8 +187,6 @@ func Post(c *gin.Context) {
 		attribute.Float64("grpc.response.Calories.Gain", resRecommendations.CaloriesToGain),
 		attribute.Float64("grpc.response.Calories.Loss", resRecommendations.CaloriesToLoss),
 	)
-
-	defer spanRecommendations.End()
 
 	_, spanResponse := tr.Start(c.Request.Context(), "HTTP Response")
 

@@ -9,10 +9,8 @@ import (
 	"recommendations-grpc-service/pkg/services/proteins"
 	"recommendations-grpc-service/pkg/services/water"
 
+	"go.opentelemetry.io/otel"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 )
 
 type Server struct {
@@ -20,6 +18,7 @@ type Server struct {
 
 func (s *Server) SayHello(ctx context.Context, in *Message) (*Response, error) {
 	log := logger.Instance()
+	tr := otel.Tracer("recommendations-grpc-service")
 
 	// Water
 	log.Info().
@@ -34,26 +33,7 @@ func (s *Server) SayHello(ctx context.Context, in *Message) (*Response, error) {
 		Str("WATER_SERVICE_ENDPOINT", waterEndpoint).
 		Msg("Creating remote connection with gRPC Endpoint for Water Consume Service")
 
-	var connWater *grpc.ClientConn
-	connWater, errWater := grpc.Dial(
-		waterEndpoint,
-		grpc.WithInsecure(),
-		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
-		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
-	)
-	if errWater != nil {
-		log.Error().
-			Str("Service", "water").
-			Str("Error", errWater.Error()).
-			Msg("Failed to create gRPC Connection with Water Consume Service")
-	}
-	defer connWater.Close()
-
-	waterClient := water.NewWaterServiceClient(connWater)
-	resWater, err := waterClient.SayHello(ctx, &water.Message{
-		Weight: in.Weight,
-		Height: in.Height,
-	})
+	resWater, err := water.Call(ctx, in.Weight, in.Height, tr)
 
 	if err != nil {
 		log.Error().
@@ -75,32 +55,7 @@ func (s *Server) SayHello(ctx context.Context, in *Message) (*Response, error) {
 		Float64("Height", in.Height).
 		Msg("Calculating proteins necessity")
 
-	proteinsEndpoint := os.Getenv("PROTEINS_SERVICE_ENDPOINT")
-
-	log.Info().
-		Str("Service", "proteins").
-		Str("PROTEINS_SERVICE_ENDPOINT", proteinsEndpoint).
-		Msg("Creating remote connection with gRPC Endpoint for Proteins Consume Service")
-
-	var connProteins *grpc.ClientConn
-	connProteins, errProteins := grpc.Dial(
-		proteinsEndpoint,
-		grpc.WithInsecure(),
-		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
-		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
-	)
-	if err != nil {
-		log.Error().
-			Str("Service", "proteins").
-			Str("Error", errProteins.Error()).
-			Msg("Failed to create gRPC Connection with Water Consume Service")
-	}
-	defer connProteins.Close()
-
-	proteinsClient := proteins.NewProteinsServiceClient(connProteins)
-	resProteins, err := proteinsClient.SayHello(ctx, &proteins.Message{
-		Weight: in.Weight,
-	})
+	resProteins, err := proteins.Call(ctx, in.Weight, tr)
 
 	if err != nil {
 		log.Error().
@@ -115,32 +70,7 @@ func (s *Server) SayHello(ctx context.Context, in *Message) (*Response, error) {
 		Float64("Height", in.Height).
 		Msg("Calculating calories necessity")
 
-	caloriesEndpoint := os.Getenv("CALORIES_SERVICE_ENDPOINT")
-
-	log.Info().
-		Str("Service", "calories").
-		Str("CALORIES_SERVICE_ENDPOINT", caloriesEndpoint).
-		Msg("Creating remote connection with gRPC Endpoint for Calories Consume Service")
-
-	var connCalories *grpc.ClientConn
-	connCalories, errCalories := grpc.Dial(
-		caloriesEndpoint,
-		grpc.WithInsecure(),
-		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
-		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
-	)
-	if errCalories != nil {
-		log.Error().
-			Str("Service", "calories").
-			Str("Error", errCalories.Error()).
-			Msg("Failed to create gRPC Connection with Water Consume Service")
-	}
-	defer connCalories.Close()
-
-	caloriesClient := calories.NewCaloriesServiceClient(connCalories)
-	resCalories, err := caloriesClient.SayHello(ctx, &calories.Message{
-		Necessity: in.Calories,
-	})
+	resCalories, err := calories.Call(ctx, in.Calories, tr)
 
 	if err != nil {
 		log.Error().
