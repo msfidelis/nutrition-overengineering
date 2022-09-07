@@ -22,10 +22,6 @@ import (
 	// Jaeger
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
-	// "go.opentelemetry.io/otel/attribute"
-
-	// oteltrace "go.opentelemetry.io/otel/trace"
-
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 

@@ -1,4 +1,4 @@
-package recommendations
+package water
 
 import (
 	context "context"
@@ -6,14 +6,15 @@ import (
 	"os"
 	"time"
 
-	"github.com/msfidelis/health-api/pkg/logger"
+	"recommendations-grpc-service/pkg/logger"
+
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 )
 
-func Call(ctx context.Context, weight float64, height float64, necessity float64, tracer trace.Tracer) (*Response, error) {
+func Call(ctx context.Context, weight float64, height float64, tracer trace.Tracer) (*Response, error) {
 
 	var backoffSchedule = []time.Duration{
 		1 * time.Second,
@@ -25,16 +26,16 @@ func Call(ctx context.Context, weight float64, height float64, necessity float64
 	var err error
 
 	log := logger.Instance()
-	recommendationsEndpoint := os.Getenv("RECOMMENDATIONS_SERVICE_ENDPOINT")
+	waterEndpoint := os.Getenv("WATER_SERVICE_ENDPOINT")
 
 	for i, backoff := range backoffSchedule {
 
-		ctxCall, spanCall := tracer.Start(ctx, fmt.Sprintf("recommendations call attempt %v", i+1))
+		ctxCall, spanCall := tracer.Start(ctx, fmt.Sprintf("water call attempt %v", i+1))
 		defer spanCall.End()
 
 		var conn *grpc.ClientConn
 		conn, err = grpc.Dial(
-			recommendationsEndpoint,
+			waterEndpoint,
 			grpc.WithInsecure(),
 			grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
 			grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
@@ -42,33 +43,32 @@ func Call(ctx context.Context, weight float64, height float64, necessity float64
 
 		if err != nil {
 			log.Error().
-				Str("Service", "recommendations").
+				Str("Service", "water").
 				Str("Error", err.Error()).
-				Msg("Failed to create gRPC Connection with recommendations Service")
+				Msg("Failed to create gRPC Connection with water Service")
 
 			spanCall.SetAttributes(
-				attribute.String("Service", "recommendations"),
+				attribute.String("Service", "water"),
 				attribute.String("gRPC connection error", err.Error()),
 			)
 		}
 		defer conn.Close()
 
-		grpcClient := NewRecomendationsServiceClient(conn)
+		grpcClient := NewWaterServiceClient(conn)
 
 		resGrpc, err = grpcClient.SayHello(ctxCall, &Message{
-			Weight:   weight,
-			Height:   height,
-			Calories: necessity,
+			Weight: weight,
+			Height: height,
 		})
 
 		if err != nil {
 			log.Error().
-				Str("Service", "recommendations").
+				Str("Service", "water").
 				Str("Error", err.Error()).
-				Msg("Failed to communicate with recommendations Service")
+				Msg("Failed to communicate with water Service")
 
 			spanCall.SetAttributes(
-				attribute.String("Service", "recommendations"),
+				attribute.String("Service", "water"),
 				attribute.String("gRPC call error", err.Error()),
 			)
 		}
@@ -78,13 +78,13 @@ func Call(ctx context.Context, weight float64, height float64, necessity float64
 		}
 
 		log.Info().
-			Str("Service", "recommendations").
+			Str("Service", "water").
 			Int("Retry", i+1).
 			Str("Backoff", fmt.Sprintf("%s", backoff)).
-			Msg("Failed to communicate with recommendations Service")
+			Msg("Failed to communicate with water Service")
 
 		spanCall.SetAttributes(
-			attribute.String("Service", "recommendations"),
+			attribute.String("Service", "water"),
 			attribute.Int("Attempts", i+1),
 		)
 
