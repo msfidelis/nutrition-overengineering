@@ -108,61 +108,27 @@ func Post(c *gin.Context) {
 	// BMR
 	ctxBMR, spanBMR := tr.Start(c.Request.Context(), "BMR Service Call")
 
-	bmrEndpoint := os.Getenv("BMR_SERVICE_ENDPOINT")
-
-	log.Info().
-		Str("Service", "bmr").
-		Str("BMR_SERVICE_ENDPOINT", bmrEndpoint).
-		Msg("Creating remote connection with gRPC Endpoint for BMR Service")
-
 	spanBMR.SetAttributes(
-		attribute.String("Service", "bmr"),
-		attribute.String("BMR_SERVICE_ENDPOINT", bmrEndpoint),
+		attribute.String("Service", "BMR"),
 	)
 
-	var conn *grpc.ClientConn
-	conn, err := grpc.Dial(
-		bmrEndpoint,
-		grpc.WithInsecure(),
-		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
-		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
-	)
+	resBMR, err := bmr.Call(ctxBMR, request.Gender, request.Weight, request.Height, request.ActivityIntensity, 3, tr)
 
 	if err != nil {
 		log.Error().
 			Str("Service", "bmr").
 			Str("Error", err.Error()).
-			Msg("Failed to create gRPC Connection with BMR Service")
+			Msg("Error to consume gRPC Service")
 
 		spanBMR.SetAttributes(
-			attribute.String("Service", "bmr"),
 			attribute.String("Error", err.Error()),
-			attribute.String("Message", "Failed to create gRPC Connection with BMR Service"),
 		)
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Error to create gRPC Connection with BMR Service",
+			"error":   err.Error(),
+		})
 	}
-	defer conn.Close()
-
-	bmrClient := bmr.NewBMRServiceClient(conn)
-
-	spanBMR.SetAttributes(
-		attribute.String("grpc.request.Gender", request.Gender),
-		attribute.Float64("grpc.request.Weight", request.Weight),
-		attribute.Float64("grpc.request.Height", request.Height),
-		attribute.String("grpc.request.ActivityIntensity", request.ActivityIntensity),
-	)
-
-	resBMR, err := bmrClient.SayHello(ctxBMR, &bmr.Message{
-		Gender:   request.Gender,
-		Weight:   request.Weight,
-		Height:   request.Height,
-		Activity: request.ActivityIntensity,
-	})
-
-	spanBMR.SetAttributes(
-		attribute.Float64("grpc.response.BMR", resBMR.Bmr),
-		attribute.Float64("grpc.response.Necessity", resBMR.Necessity),
-		attribute.String("grpc.response.Unity", "kcal"),
-	)
 
 	defer spanBMR.End()
 
