@@ -8,6 +8,7 @@ import (
 
 	"github.com/msfidelis/health-api/pkg/logger"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 )
@@ -28,6 +29,9 @@ func Call(ctx context.Context, gender string, weight float64, height float64, ac
 
 	for i, backoff := range backoffSchedule {
 
+		ctxCall, spanCall := tracer.Start(ctx, fmt.Sprintf("BMR call attempt %v", i+1))
+		defer spanCall.End()
+
 		var conn *grpc.ClientConn
 		conn, err = grpc.Dial(
 			bmrEndpoint,
@@ -41,12 +45,17 @@ func Call(ctx context.Context, gender string, weight float64, height float64, ac
 				Str("Service", "bmr").
 				Str("Error", err.Error()).
 				Msg("Failed to create gRPC Connection with BMR Service")
+
+			spanCall.SetAttributes(
+				attribute.String("Service", "BMR"),
+				attribute.String("gRPC connection error", err.Error()),
+			)
 		}
 		defer conn.Close()
 
 		bmrClient := NewBMRServiceClient(conn)
 
-		resBMR, err = bmrClient.SayHello(ctx, &Message{
+		resBMR, err = bmrClient.SayHello(ctxCall, &Message{
 			Gender:   gender,
 			Weight:   weight,
 			Height:   height,
@@ -58,6 +67,11 @@ func Call(ctx context.Context, gender string, weight float64, height float64, ac
 				Str("Service", "bmr").
 				Str("Error", err.Error()).
 				Msg("Failed to communicate with BMR Service")
+
+			spanCall.SetAttributes(
+				attribute.String("Service", "BMR"),
+				attribute.String("gRPC call error", err.Error()),
+			)
 		}
 
 		if err == nil {
@@ -69,6 +83,11 @@ func Call(ctx context.Context, gender string, weight float64, height float64, ac
 			Int("Retry", i+1).
 			Str("Backoff", fmt.Sprintf("%s", backoff)).
 			Msg("Failed to communicate with BMR Service")
+
+		spanCall.SetAttributes(
+			attribute.String("Service", "BMR"),
+			attribute.Int("Attempts", i+1),
+		)
 
 		time.Sleep(backoff)
 	}
