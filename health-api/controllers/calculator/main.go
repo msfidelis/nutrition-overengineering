@@ -112,7 +112,7 @@ func Post(c *gin.Context) {
 		attribute.String("Service", "BMR"),
 	)
 
-	resBMR, err := bmr.Call(ctxBMR, request.Gender, request.Weight, request.Height, request.ActivityIntensity, 3, tr)
+	resBMR, err := bmr.Call(ctxBMR, request.Gender, request.Weight, request.Height, request.ActivityIntensity, tr)
 
 	if err != nil {
 		log.Error().
