@@ -21,7 +21,7 @@ func Call(ctx context.Context, gender string, weight float64, height float64, ac
 		10 * time.Second,
 	}
 
-	var resBMR *Response
+	var resGrpc *Response
 	var err error
 
 	log := logger.Instance()
@@ -53,9 +53,9 @@ func Call(ctx context.Context, gender string, weight float64, height float64, ac
 		}
 		defer conn.Close()
 
-		bmrClient := NewBMRServiceClient(conn)
+		grpcClient := NewBMRServiceClient(conn)
 
-		resBMR, err = bmrClient.SayHello(ctxCall, &Message{
+		resGrpc, err = grpcClient.SayHello(ctxCall, &Message{
 			Gender:   gender,
 			Weight:   weight,
 			Height:   height,
@@ -96,6 +96,6 @@ func Call(ctx context.Context, gender string, weight float64, height float64, ac
 		return nil, err
 	}
 
-	return resBMR, nil
+	return resGrpc, nil
 
 }

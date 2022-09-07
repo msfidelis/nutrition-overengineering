@@ -107,6 +107,7 @@ func Post(c *gin.Context) {
 
 	// BMR
 	ctxBMR, spanBMR := tr.Start(c.Request.Context(), "BMR Service Call")
+	defer spanBMR.End()
 
 	spanBMR.SetAttributes(
 		attribute.String("Service", "BMR"),
@@ -130,62 +131,35 @@ func Post(c *gin.Context) {
 		})
 	}
 
-	defer spanBMR.End()
-
 	// IMC
 	ctxIMC, spanIMC := tr.Start(c.Request.Context(), "IMC Service Call")
-	imcEndpoint := os.Getenv("IMC_SERVICE_ENDPOINT")
+	defer spanIMC.End()
 
 	log.Info().
 		Str("Service", "imc").
-		Str("IMC_SERVICE_ENDPOINT", imcEndpoint).
 		Msg("Creating remote connection with gRPC Endpoint for IMC Service")
 
 	spanIMC.SetAttributes(
 		attribute.String("Service", "imc"),
-		attribute.String("IMC_SERVICE_ENDPOINT", imcEndpoint),
 	)
 
-	var connIMC *grpc.ClientConn
-	connIMC, errIMC := grpc.Dial(
-		imcEndpoint,
-		grpc.WithInsecure(),
-		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
-		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
-	)
+	resIMC, err := imc.Call(ctxIMC, request.Weight, request.Height, tr)
 
-	if errIMC != nil {
+	if err != nil {
 		log.Error().
 			Str("Service", "imc").
 			Str("Error", err.Error()).
-			Msg("Failed to create gRPC Connection with IMC Service")
+			Msg("Error to consume gRPC Service")
 
-		spanIMC.SetAttributes(
-			attribute.String("Service", "imc"),
+		spanBMR.SetAttributes(
 			attribute.String("Error", err.Error()),
-			attribute.String("Message", "Failed to create gRPC Connection with IMC Service"),
 		)
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Error to create gRPC Connection with IMC Service",
+			"error":   err.Error(),
+		})
 	}
-	defer connIMC.Close()
-
-	imcClient := imc.NewIMCServiceClient(connIMC)
-
-	spanIMC.SetAttributes(
-		attribute.Float64("grpc.request.Weight", request.Weight),
-		attribute.Float64("grpc.request.Height", request.Height),
-	)
-
-	resIMC, err := imcClient.SayHello(ctxIMC, &imc.Message{
-		Weight: request.Weight,
-		Height: request.Height,
-	})
-
-	spanIMC.SetAttributes(
-		attribute.Float64("grpc.response.Imc", resIMC.Imc),
-		attribute.String("grpc.response.Class", resIMC.Class),
-	)
-
-	defer spanIMC.End()
 
 	// Recommendations
 	ctxRecommendations, spanRecommendations := tr.Start(c.Request.Context(), "Recommendations Service Call")
