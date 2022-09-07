@@ -1,5 +1,3 @@
 package imc
 
-func Call() {
-
-}
+func Call() {}
