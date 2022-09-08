@@ -1,6 +1,7 @@
 package calculator
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +12,10 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 
+	guuid "github.com/google/uuid"
 	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/nats-io/nats.go"
 )
 
 type Request struct {
@@ -23,7 +27,8 @@ type Request struct {
 }
 
 type Response struct {
-	Status int `json:"status" binding:"required"`
+	Id     string `json:"id" binding:"required"`
+	Status int    `json:"status" binding:"required"`
 	Imc    struct {
 		Result float64 `json:"result"`
 		Class  string  `json:"class"`
@@ -106,6 +111,10 @@ func Post(c *gin.Context) {
 	ctxBMR, spanBMR := tr.Start(c.Request.Context(), "BMR Service Call")
 	defer spanBMR.End()
 
+	log.Info().
+		Str("Service", "bmr").
+		Msg("Creating remote connection with gRPC Endpoint for BMR Service")
+
 	spanBMR.SetAttributes(
 		attribute.String("Service", "BMR"),
 	)
@@ -162,6 +171,10 @@ func Post(c *gin.Context) {
 	ctxRecommendations, spanRecommendations := tr.Start(c.Request.Context(), "Recommendations Service Call")
 	defer spanRecommendations.End()
 
+	log.Info().
+		Str("Service", "recommendations").
+		Msg("Creating remote connection with gRPC Endpoint for IMC Service")
+
 	resRecommendations, err := recommendations.Call(ctxRecommendations, request.Weight, request.Height, resBMR.Necessity, tr)
 
 	if err != nil {
@@ -189,6 +202,14 @@ func Post(c *gin.Context) {
 	)
 
 	_, spanResponse := tr.Start(c.Request.Context(), "HTTP Response")
+	defer spanResponse.End()
+
+	log.Info().
+		Str("Service", "health-api").
+		Msg("Creating response payload")
+
+	// UUID
+	response.Id = guuid.New().String()
 
 	// BMR Response
 	response.Basal.BMR.Value = resBMR.Bmr
@@ -246,6 +267,46 @@ func Post(c *gin.Context) {
 		attribute.String("http.response.Recomendations.Calories.Loss.Unit", response.Basal.Necessity.Unit),
 	)
 
+	_, spanNatsPublich := tr.Start(c.Request.Context(), "NATS Publish")
+	defer spanNatsPublich.End()
+
+	log.Info().
+		Str("Service", "nats").
+		Str("Queue", "nutrition").
+		Msg("Sending message to NATS Server")
+
+	// Publish on Nats to Save Data
+	nc, err := nats.Connect("nats://nats-1:4222,nats-2://nats-2:4222")
+	defer nc.Close()
+	if err != nil {
+		log.Error().
+			Str("Error", err.Error()).
+			Msg("Error to connect to Nats")
+	}
+
+	// Create JetStream Context
+	js, err := nc.JetStream()
+
+	if err != nil {
+		log.Error().
+			Str("Error", err.Error()).
+			Msg("Error to create jetstream to Nats")
+	}
+
+	if err != nil {
+		log.Error().
+			Str("Error", err.Error()).
+			Msg("Error to convert response to json")
+	}
+
+	b, err := json.Marshal(response)
+	_, err = js.Publish("ORDERS.scratch", b)
+
+	if err != nil {
+		log.Error().
+			Str("Error", err.Error()).
+			Msg("Error to publish message on jetstream")
+	}
+
 	c.JSON(http.StatusOK, response)
-	defer spanResponse.End()
 }

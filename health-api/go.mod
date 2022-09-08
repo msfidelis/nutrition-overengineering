@@ -7,7 +7,9 @@ require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-openapi/spec v0.20.0 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/msfidelis/gin-chaos-monkey v0.0.5
+	github.com/nats-io/nats.go v1.16.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/rs/zerolog v1.22.0
 	github.com/swaggo/files v0.0.0-20190704085106-630677cd5c14
@@ -22,7 +24,6 @@ require (
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.6.3
 	go.opentelemetry.io/otel/sdk v1.6.3
 	go.opentelemetry.io/otel/trace v1.6.3 // indirect
-	golang.org/x/net v0.0.0-20201224014010-6772e930b67b // indirect
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 	google.golang.org/grpc v1.45.0
 	google.golang.org/protobuf v1.26.0
