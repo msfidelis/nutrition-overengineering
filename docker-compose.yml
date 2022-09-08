@@ -8,6 +8,29 @@ services:
       - "14268:14268"
     networks:
       - health
+
+  nats-1:
+    image: nats:alpine
+    volumes:
+      - ./nats/nats-server-1.conf:/etc/nats/nats-server.conf
+      - .tmp/nats/data/jetstream/1:/data/jetstream
+    ports:
+      - "4223:4222"
+      - "8223:8222"
+    networks:
+      - health
+
+  nats-2:
+    image: nats:alpine
+    volumes:
+      - ./nats/nats-server-2.conf:/etc/nats/nats-server.conf
+      - .tmp/nats/data/jetstream/2:/data/jetstream
+    ports:
+      - "4224:4222"
+      - "8224:8222"
+    networks:
+      - health
+
   health-api:
     build:
         context: ./health-api
@@ -18,12 +41,17 @@ services:
       - IMC_SERVICE_ENDPOINT=imc-grpc:30000
       - RECOMMENDATIONS_SERVICE_ENDPOINT=recommendations-grpc:30000
       - JAEGER_COLLECTOR_ENDPOINT=http://jaeger:14268/api/traces
+      - NATS_URI=nats://nats-1:4222,nats://nats-2:4222
     ports:
         - 8080:8080
     volumes:
         - ./health-api:/go/src/health-api
     networks:
       - health
+    depends_on:
+      - nats-1
+      - nats-2
+
   bmr-grpc:
     build:
         context: ./bmr-grpc-service
@@ -50,6 +78,7 @@ services:
         - ./imc-grpc-service:/go/src/imc-grpc-service
     networks:
       - health
+      
   recommendations-grpc:
     build:
         context: ./recommendations-grpc-service
@@ -66,6 +95,7 @@ services:
         - ./recommendations-grpc-service:/go/src/recommendations-grpc-service
     networks:
       - health
+
   proteins-grpc:
     build:
         context: ./proteins-grpc-service
@@ -79,6 +109,7 @@ services:
         - ./proteins-grpc-service:/go/src/proteins-grpc-service
     networks:
       - health
+
   water-grpc:
     build:
         context: ./water-grpc-service
@@ -92,6 +123,7 @@ services:
         - ./water-grpc-service:/go/src/water-grpc-service
     networks:
       - health
+
   calories-grpc:
     build:
         context: ./calories-grpc-service
@@ -105,5 +137,23 @@ services:
         - ./calories-grpc-service:/go/src/calories-grpc-service
     networks:
       - health
+
+  database-store-service:
+    build:
+        context: ./database-store-service
+        dockerfile: Dockerfile.dev
+    environment:
+      - ENVIRONMENT=dev
+      - JAEGER_COLLECTOR_ENDPOINT=http://jaeger:14268/api/traces
+      - NATS_URI=nats://nats-1:4222,nats://nats-2:4222
+    volumes:
+        - ./database-store-service:/go/src/database-store-service
+    networks:
+      - health
+    depends_on:
+      - health-api
+      - nats-1
+      - nats-2
+
 networks:
   health:
