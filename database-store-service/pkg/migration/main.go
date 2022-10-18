@@ -8,7 +8,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"database-store-service/pkg/db"
-	"database-store-service/pkg/envs"
+	// "database-store-service/pkg/envs"
 )
 
 func Migrate() {
@@ -24,7 +24,8 @@ func Migrate() {
 		panic(err)
 	}
 
-	path := envs.Getenv("MIGRATIONS_PATH", "./migrations")
+	// path := envs.Getenv("MIGRATIONS_PATH", "./migrations")
+	path := "./migrations"
 	migrationsPath := fmt.Sprintf("file://%s", path)
 	fmt.Println(migrationsPath)
 

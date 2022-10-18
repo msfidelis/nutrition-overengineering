@@ -14,8 +14,7 @@ func main() {
 	log := logger.Instance()
 	log.Info().Msg("Database Store Service Starting")
 
-	log.Info()
-		.Msg("Starting Database Migrations")
+	log.Info().Msg("Starting Database Migrations")
 
 	migration.Migrate()
 

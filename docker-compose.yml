@@ -166,7 +166,7 @@ services:
       - DB_PORT=5432
       - DB_PASSWORD=doutorequemtemdoutorado 
       - DB_SCHEMA=health
-      - MIGRATIONS_PATH=/app/migrations
+      - MIGRATIONS_PATH=./migrations
     volumes:
         - ./database-store-service:/go/src/database-store-service
     networks:
