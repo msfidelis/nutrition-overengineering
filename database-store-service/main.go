@@ -2,6 +2,8 @@ package main
 
 import (
 	"database-store-service/pkg/logger"
+	"database-store-service/pkg/envs"
+	"database-store-service/pkg/migration"
 	"fmt"
 	"sync"
 
@@ -10,13 +12,24 @@ import (
 
 func main() {
 	log := logger.Instance()
-	log.Info().Msg("Hello World")
+	log.Info().Msg("Database Store Service Starting")
+
+	log.Info()
+		.Msg("Starting Database Migrations")
+
+	migration.Migrate()
 
 	wg := sync.WaitGroup{}
 	wg.Add(10)
 
 	// Nats Client
-	nc, err := nats.Connect("nats://nats-1:4222,nats://nats-2:4222")
+	natsUri := envs.Getenv("NATS_URI", "nats://0.0.0.0:4222")
+
+	log.Info(). 
+		Str("Nats URI", natsUri).
+		Msg("Trying to connect to NATS")	
+
+	nc, err := nats.Connect(natsUri)
 	defer nc.Close()
 
 	if err != nil {
@@ -29,8 +42,8 @@ func main() {
 	js, err := nc.JetStream()
 
 	_, err = js.AddStream(&nats.StreamConfig{
-		Name:     "orders",
-		Subjects: []string{"ORDERS.*"},
+		Name:     "reports",
+		Subjects: []string{"REPORTS.*"},
 	})
 
 	if err != nil {
@@ -45,9 +58,9 @@ func main() {
 			Msg("Failed to add a durable consumer")
 	}
 
-	js.QueueSubscribe("ORDERS.*", "store", func(m *nats.Msg) {
+	js.QueueSubscribe("REPORTS.*", "store", func(m *nats.Msg) {
 		log.Info().
-			Msg(fmt.Sprintf("Received a person: %+v\n", string(m.Data)))
+			Msg(fmt.Sprintf("Received a health report: %+v\n", string(m.Data)))
 		m.Ack()
 	}, nats.ManualAck())
 

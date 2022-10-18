@@ -300,7 +300,7 @@ func Post(c *gin.Context) {
 	}
 
 	b, err := json.Marshal(response)
-	_, err = js.Publish("ORDERS.scratch", b)
+	_, err = js.Publish("REPORTS.created", b)
 
 	if err != nil {
 		log.Error().

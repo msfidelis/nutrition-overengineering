@@ -31,6 +31,21 @@ services:
     networks:
       - health
 
+  database:
+    image: postgres:15.0-alpine
+    volumes:
+      - .tmp/postgres/data/:/data/postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=pguser
+      - POSTGRES_PASSWORD=doutorequemtemdoutorado 
+      - POSTGRES_DB=health
+      - PGDATA=/data/postgres
+    networks:
+      - health
+
+
   health-api:
     build:
         context: ./health-api
@@ -146,6 +161,12 @@ services:
       - ENVIRONMENT=dev
       - JAEGER_COLLECTOR_ENDPOINT=http://jaeger:14268/api/traces
       - NATS_URI=nats://nats-1:4222,nats://nats-2:4222
+      - DB_USER=pguser
+      - DB_HOST=database
+      - DB_PORT=5432
+      - DB_PASSWORD=doutorequemtemdoutorado 
+      - DB_SCHEMA=health
+      - MIGRATIONS_PATH=/app/migrations
     volumes:
         - ./database-store-service:/go/src/database-store-service
     networks:
@@ -154,6 +175,7 @@ services:
       - health-api
       - nats-1
       - nats-2
+      - database
 
 networks:
   health:

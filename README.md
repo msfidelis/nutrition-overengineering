@@ -27,6 +27,8 @@ Application to calc healthcare and nutrition metrics, but using the most over en
 | calories-grpc-service         | fidelissauro/calories-grpc-service:latest         |
 | proteins-grpc-service         | fidelissauro/proteins-grpc-service:latest         |
 | recommendations-grpc-service  | fidelissauro/recommendations-grpc-service:latest  | 
+| database-store-service        | fidelissauro/database-store-service:latest        | 
+
 
 ## Workflow 
 
