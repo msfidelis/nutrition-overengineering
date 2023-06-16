@@ -11,7 +11,7 @@ import (
 
 func main() {
 	log := logger.Instance()
-	log.Info().Msg("Hello World")
+	log.Info().Msg("Starting Database Store Service")
 
 	wg := sync.WaitGroup{}
 	wg.Add(10)
@@ -23,8 +23,12 @@ func main() {
 	if err != nil {
 		log.Error().
 			Str("Error", err.Error()).
+			Str("NATS_URI", os.Getenv(("NATS_URI"))).
 			Msg("Error to connect to Nats")
 	}
+	log.Info().
+		Str("NATS_URI", os.Getenv("NATS_URI")).
+		Msg("Connected to NATS")
 
 	// Create JetStream Context
 	js, err := nc.JetStream()
@@ -37,12 +41,14 @@ func main() {
 	if err != nil {
 		log.Error().
 			Str("Error", err.Error()).
+			Str("NATS_URI", os.Getenv(("NATS_URI"))).
 			Msg("Failed to add Stream")
 	}
 
 	if err != nil {
 		log.Error().
 			Str("Error", err.Error()).
+			Str("NATS_URI", os.Getenv(("NATS_URI"))).
 			Msg("Failed to add a durable consumer")
 	}
 
