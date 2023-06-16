@@ -3,6 +3,7 @@ package main
 import (
 	"database-store-service/pkg/logger"
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/nats-io/nats.go"
@@ -16,7 +17,7 @@ func main() {
 	wg.Add(10)
 
 	// Nats Client
-	nc, err := nats.Connect("nats://nats-1:4222,nats://nats-2:4222")
+	nc, err := nats.Connect(os.Getenv("NATS_URI"))
 	defer nc.Close()
 
 	if err != nil {
