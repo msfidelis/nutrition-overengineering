@@ -32,7 +32,7 @@ spec:
         - name: ENVIRONMENT
           value: "dev"
         - name: JAEGER_COLLECTOR_ENDPOINT
-          value: http://jaeger:14268/api/traces          
+          value: http://jaeger.jaeger.svc.cluster.local:14268/api/traces          
         - name: BMR_SERVICE_ENDPOINT
           value: "bmr-grpc.bmr.svc.cluster.local:30000"
         - name: IMC_SERVICE_ENDPOINT
@@ -40,7 +40,7 @@ spec:
         - name: RECOMMENDATIONS_SERVICE_ENDPOINT
           value: "recommendations-grpc.recommendations.svc.cluster.local:30000"
         - name: NATS_URI
-          value: "nats://nats-1:4222,nats://nats-2:4222"                              
+          value: "nats://nats.nats.svc.cluster.local:4222"                              
         # livenessProbe:
         #   failureThreshold: 10
         #   httpGet:

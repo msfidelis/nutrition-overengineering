@@ -3,6 +3,7 @@ package calculator
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/msfidelis/health-api/pkg/logger"
@@ -276,7 +277,7 @@ func Post(c *gin.Context) {
 		Msg("Sending message to NATS Server")
 
 	// Publish on Nats to Save Data
-	nc, err := nats.Connect("nats://nats-1:4222,nats-2://nats-2:4222")
+	nc, err := nats.Connect(os.Getenv("NATS_URI"))
 	defer nc.Close()
 	if err != nil {
 		log.Error().

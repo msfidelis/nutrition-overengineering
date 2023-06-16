@@ -32,7 +32,7 @@ spec:
         - name: ENVIRONMENT
           value: "dev"
         - name: JAEGER_COLLECTOR_ENDPOINT
-          value: http://jaeger:14268/api/traces          
+          value: http://jaeger.jaeger.svc.cluster.local:14268/api/traces          
         - name: PROTEINS_SERVICE_ENDPOINT
           value: "proteins-grpc.proteins.svc.cluster.local:30000"  
         - name: WATER_SERVICE_ENDPOINT
