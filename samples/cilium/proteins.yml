@@ -19,7 +19,8 @@ spec:
     metadata:
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "30000"           
+        prometheus.io/port: "30000"
+        policy.cilium.io/proxy-visibility: "<Egress/53/UDP/DNS>,<Egress/30000/TCP/HTTP>"
       labels:
         app: proteins-grpc
         name: proteins-grpc

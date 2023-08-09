@@ -19,7 +19,8 @@ spec:
     metadata:
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8080"           
+        prometheus.io/port: "8080"
+        policy.cilium.io/proxy-visibility: "<Egress/53/UDP/DNS>,<Egress/30000/TCP/HTTP>"
       labels:
         app: health-api
         name: health-api
@@ -41,15 +42,6 @@ spec:
           value: "recommendations-grpc.recommendations.svc.cluster.local:30000"
         - name: NATS_URI
           value: "nats://nats.nats.svc.cluster.local:4222"                              
-        # livenessProbe:
-        #   failureThreshold: 10
-        #   httpGet:
-        #     httpHeaders:
-        #     - name: Custom-Header
-        #       value: Awesome
-        #     path: /healthcheck
-        #     port: 8080
-        #   periodSeconds: 10
         ports:
         - containerPort: 8080
           name: http   
@@ -59,6 +51,11 @@ spec:
             path: /healthcheck
             port: 8080
           periodSeconds: 10
+        livenessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /healthcheck
+            port: 8080          
       terminationGracePeriodSeconds: 60
 ---
 apiVersion: v1

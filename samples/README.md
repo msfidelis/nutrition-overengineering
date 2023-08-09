@@ -5,7 +5,6 @@
 ### Nats Deploy 
 
 ```bash
-```
 helm repo add nats https://nats-io.github.io/k8s/helm/charts/
 
 helm install nats nats/nats \
@@ -17,5 +16,4 @@ helm install nats nats/nats \
 --set nats.jetstream.fileStorage.enabled=true \
 --set nats.jetstream.fileStorage.size=1Gi \
 --set nats.jetstream.fileStorage.storageDirectory=/data/
-```
 ```
