@@ -1,0 +1,100 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: calories
+  labels:
+    istio-injection: enabled
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: calories-grpc
+  name: calories-grpc
+  namespace: calories
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: calories-grpc
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "30000"
+      labels:
+        app: calories-grpc
+        name: calories-grpc
+        version: v1
+    spec:
+      containers:
+      - image: fidelissauro/calories-grpc-service:latest
+        name: calories-grpc
+        env:
+        - name: ENVIRONMENT
+          value: "dev"
+        - name: JAEGER_COLLECTOR_ENDPOINT
+          value: http://jaeger.jaeger.svc.cluster.local:14268/api/traces
+        ports:
+        - containerPort: 30000
+          name: http   
+      terminationGracePeriodSeconds: 60
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: calories-grpc
+  namespace: calories
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "30000"    
+  labels:
+    app.kubernetes.io/name: calories-grpc
+    app.kubernetes.io/instance: health-api 
+spec:
+  ports:
+  - name: web
+    port: 30000
+    protocol: TCP
+  selector:
+    app: calories-grpc
+  type: ClusterIP
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: calories-grpc
+  namespace: calories
+spec:
+  hosts:
+  - "calories-grpc.calories.svc.cluster.local"  
+  http:
+  - route:
+    - destination:
+        host: calories-grpc
+        port:
+          number: 30000
+    retries:
+      attempts: 2
+      perTryTimeout: 500ms
+      retryOn: 5xx,gateway-error,connect-failure,refused-stream
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: calories-grpc
+  namespace: calories
+spec:
+  host: calories-grpc.water.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 500
+      http:
+        http1MaxPendingRequests: 30
+        maxRequestsPerConnection: 100
+    outlierDetection:
+      consecutive5xxErrors: 2
+      interval: 300ms
+      baseEjectionTime: 60s
+      maxEjectionPercent: 100

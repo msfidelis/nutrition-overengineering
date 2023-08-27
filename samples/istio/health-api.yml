@@ -1,0 +1,135 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    istio-injection: enabled
+  name: health-api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: health-api
+  name: health-api
+  namespace: health-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: health-api
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+      labels:
+        app: health-api
+        name: health-api
+        version: v1
+    spec:
+      containers:
+      - image: fidelissauro/health-api:latest
+        name: health-api
+        env:
+        - name: ENVIRONMENT
+          value: "dev"
+        - name: JAEGER_COLLECTOR_ENDPOINT
+          value: http://jaeger.jaeger.svc.cluster.local:14268/api/traces          
+        - name: BMR_SERVICE_ENDPOINT
+          value: "bmr-grpc.bmr.svc.cluster.local:30000"
+        - name: IMC_SERVICE_ENDPOINT
+          value: "imc-grpc.imc.svc.cluster.local:30000"
+        - name: RECOMMENDATIONS_SERVICE_ENDPOINT
+          value: "recommendations-grpc.recommendations.svc.cluster.local:30000"
+        - name: NATS_URI
+          value: "nats://nats.nats.svc.cluster.local:4222"                              
+        ports:
+        - containerPort: 8080
+          name: http   
+        startupProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /healthcheck
+            port: 8080
+          periodSeconds: 10
+        livenessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /healthcheck
+            port: 8080          
+      terminationGracePeriodSeconds: 60
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: health-api
+  namespace: health-api
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"    
+  labels:
+    app.kubernetes.io/name: health-api
+    app.kubernetes.io/instance: health-api 
+spec:
+  ports:
+  - name: web
+    port: 8080
+    protocol: TCP
+  selector:
+    app: health-api
+  type: ClusterIP
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: health-api
+  namespace: health-api
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "health-api.health-api.svc.cluster.local"  
+    - "health.k8s.cluster.local" 
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: health-api
+  namespace: health-api
+spec:
+  hosts:
+  - "health-api.health-api.svc.cluster.local"  
+  - "health.k8s.cluster.local"
+  gateways:
+  - health-api
+  http:
+  - route:
+    - destination:
+        host: health-api
+        port:
+          number: 8080
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: health-api
+  namespace: health-api
+spec:
+  host: health-api.health-api.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 500
+      http:
+        http1MaxPendingRequests: 30
+        maxRequestsPerConnection: 100
+    outlierDetection:
+      consecutive5xxErrors: 2
+      interval: 300ms
+      baseEjectionTime: 60s
+      maxEjectionPercent: 100

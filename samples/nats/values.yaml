@@ -1,0 +1,15 @@
+nats:
+  jetstream:
+    enabled: true
+
+    memStorage:
+      enabled: true
+      size: 2Gi
+
+    fileStorage:
+      enabled: true
+      storageDirectory: /data/jetstream
+      size: 10Gi
+
+natsbox:
+  enabled: false

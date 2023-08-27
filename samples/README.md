@@ -16,4 +16,6 @@ helm install nats nats/nats \
 --set nats.jetstream.fileStorage.enabled=true \
 --set nats.jetstream.fileStorage.size=1Gi \
 --set nats.jetstream.fileStorage.storageDirectory=/data/
+
+helm install nack-jsc nats/nack --set jetstream.nats.url=nats://nats:4222 --namespace=nats
 ```
