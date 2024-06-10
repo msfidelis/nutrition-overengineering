@@ -88,10 +88,11 @@ func Post(c *gin.Context) {
 	var response Response
 	var request Request
 
+	tr := otel.Tracer("calculator")
+
 	// Endpoint Span
 	span := trace.SpanFromContext(c.Request.Context())
 	span.SetName("Nutrition Calc Service")
-	tr := otel.Tracer("health-api")
 
 	log := logger.Instance()
 

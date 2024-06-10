@@ -1,38 +1,39 @@
 package tracer
 
 import (
-	"fmt"
+	"context"
+	"log"
 	"os"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/exporters/zipkin"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
-func InitTracer() *sdktrace.TracerProvider {
-	exp, err := jaeger.New(
-		jaeger.WithCollectorEndpoint(
-			jaeger.WithEndpoint(
-				os.Getenv("JAEGER_COLLECTOR_ENDPOINT"),
-			),
-		),
-	)
+func InitTracer(ctx context.Context) func() {
+
+	endpoint := os.Getenv("ZIPKIN_COLLECTOR_ENDPOINT")
+	exporter, err := zipkin.New(endpoint)
 	if err != nil {
-		fmt.Println("Failed to init jaeger", err)
+		log.Fatalf("failed to create Zipkin exporter: %v", err)
 	}
 
 	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exp),
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithBatcher(exporter),
 		sdktrace.WithResource(resource.NewWithAttributes(
 			semconv.SchemaURL,
-			semconv.ServiceNameKey.String("calories-grpc-service"),
+			semconv.ServiceNameKey.String("nutrition-calories-service"),
 		)),
 	)
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-	return tp
+	return func() {
+		if err := tp.Shutdown(context.Background()); err != nil {
+			log.Fatalf("failed to shut down TracerProvider: %v", err)
+		}
+	}
 }

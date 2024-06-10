@@ -21,6 +21,7 @@ import (
 
 	// Jaeger
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.opentelemetry.io/otel"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -36,12 +37,14 @@ import (
 
 func main() {
 
-	tp := tracer.InitTracer()
-	defer func() {
-		if err := tp.Shutdown(context.Background()); err != nil {
-			log.Printf("Error shutting down tracer provider: %v", err)
-		}
-	}()
+	ctx := context.Background()
+
+	cleanup := tracer.InitTracer(ctx)
+	defer cleanup()
+
+	tracer := otel.Tracer("nutrition")
+	_, span := tracer.Start(ctx, "startup")
+	defer span.End()
 
 	router := gin.New()
 

@@ -2,60 +2,38 @@ package tracer
 
 import (
 	"context"
+	"log"
+	"os"
 
 	"go.opentelemetry.io/otel"
-
-	// stdout "go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
-
+	"go.opentelemetry.io/otel/exporters/zipkin"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-
-	"context"
-
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
-	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
-func InitTracer() *sdktrace.TracerProvider {
-	// exp, err := jaeger.New(
-	// 	jaeger.WithCollectorEndpoint(
-	// 		jaeger.WithEndpoint(
-	// 			os.Getenv("JAEGER_COLLECTOR_ENDPOINT"),
-	// 		),
-	// 	),
-	// )
-	// if err != nil {
-	// 	fmt.Println("Failed to init jaeger", err)
-	// }
-	ctx := context.Background()
-	exp, err := otlptracehttp.New(ctx)
+func InitTracer(ctx context.Context) func() {
+
+	endpoint := os.Getenv("ZIPKIN_COLLECTOR_ENDPOINT")
+	exporter, err := zipkin.New(endpoint)
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to create Zipkin exporter: %v", err)
 	}
-	tracerProvider := trace.NewTracerProvider(trace.WithBatcher(exp))
-	defer func() {
-		if err := tracerProvider.Shutdown(ctx); err != nil {
-			panic(err)
+
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithBatcher(exporter),
+		sdktrace.WithResource(resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String("nutrition-health-api"),
+		)),
+	)
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+	return func() {
+		if err := tp.Shutdown(context.Background()); err != nil {
+			log.Fatalf("failed to shut down TracerProvider: %v", err)
 		}
-	}()
-
-	// tp := sdktrace.NewTracerProvider(
-	// 	sdktrace.WithBatcher(exp),
-	// 	sdktrace.WithSampler(sdktrace.AlwaysSample()),
-	// 	sdktrace.WithResource(resource.NewWithAttributes(
-	// 		semconv.SchemaURL,
-	// 		semconv.ServiceNameKey.String("health-api"),
-	// 	)),
-	// )
-
-	// otel.SetTextMapPropagator(
-	// 	propagation.NewCompositeTextMapPropagator(
-	// 		propagation.TraceContext{},
-	// 		propagation.Baggage{},
-	// 	),
-	// )
-
-	otel.SetTracerProvider(tracerProvider)
-
-	return tracerProvider
+	}
 }
