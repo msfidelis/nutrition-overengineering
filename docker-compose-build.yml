@@ -13,32 +13,10 @@ services:
     networks:
       - health
 
-  # nats-1:
-  #   image: nats:alpine
-  #   volumes:
-  #     - ./nats/nats-server-1.conf:/etc/nats/nats-server.conf
-  #     - .tmp/nats/data/jetstream/1:/data/jetstream
-  #   ports:
-  #     - "4223:4222"
-  #     - "8223:8222"
-  #   networks:
-  #     - health
-
-  # nats-2:
-  #   image: nats:alpine
-  #   volumes:
-  #     - ./nats/nats-server-2.conf:/etc/nats/nats-server.conf
-  #     - .tmp/nats/data/jetstream/2:/data/jetstream
-  #   ports:
-  #     - "4224:4222"
-  #     - "8224:8222"
-  #   networks:
-  #     - health
-
   health-api:
     build:
         context: ./health-api
-        dockerfile: Dockerfile.dev
+        dockerfile: Dockerfile
     environment:
       - ENVIRONMENT=dev
       - BMR_SERVICE_ENDPOINT=bmr-grpc:30000
@@ -53,14 +31,11 @@ services:
         - ./health-api:/go/src/health-api
     networks:
       - health
-    # depends_on:
-    #   - nats-1
-    #   - nats-2
 
   bmr-grpc:
     build:
         context: ./bmr-grpc-service
-        dockerfile: Dockerfile.dev
+        dockerfile: Dockerfile
     environment:
       - ENVIRONMENT=dev
       - ZIPKIN_COLLECTOR_ENDPOINT=http://jaeger:9411/api/v2/spans
@@ -68,10 +43,11 @@ services:
         - ./bmr-grpc-service:/go/src/bmr-grpc-service
     networks:
       - health
+      
   imc-grpc:
     build:
         context: ./imc-grpc-service
-        dockerfile: Dockerfile.dev
+        dockerfile: Dockerfile
     environment:
       - ENVIRONMENT=dev
       - ZIPKIN_COLLECTOR_ENDPOINT=http://jaeger:9411/api/v2/spans
@@ -83,7 +59,7 @@ services:
   recommendations-grpc:
     build:
         context: ./recommendations-grpc-service
-        dockerfile: Dockerfile.dev
+        dockerfile: Dockerfile
     environment:
       - ENVIRONMENT=dev
       - PROTEINS_SERVICE_ENDPOINT=proteins-grpc:30000
@@ -98,7 +74,7 @@ services:
   proteins-grpc:
     build:
         context: ./proteins-grpc-service
-        dockerfile: Dockerfile.dev
+        dockerfile: Dockerfile
     environment:
       - ENVIRONMENT=dev
       - ZIPKIN_COLLECTOR_ENDPOINT=http://jaeger:9411/api/v2/spans
@@ -110,7 +86,7 @@ services:
   water-grpc:
     build:
         context: ./water-grpc-service
-        dockerfile: Dockerfile.dev
+        dockerfile: Dockerfile
     environment:
       - ENVIRONMENT=dev
       - ZIPKIN_COLLECTOR_ENDPOINT=http://jaeger:9411/api/v2/spans
@@ -122,7 +98,7 @@ services:
   calories-grpc:
     build:
         context: ./calories-grpc-service
-        dockerfile: Dockerfile.dev
+        dockerfile: Dockerfile
     environment:
       - ENVIRONMENT=dev
       - ZIPKIN_COLLECTOR_ENDPOINT=http://jaeger:9411/api/v2/spans
@@ -130,23 +106,6 @@ services:
         - ./calories-grpc-service:/go/src/calories-grpc-service
     networks:
       - health
-
-  # database-store-service:
-  #   build:
-  #       context: ./database-store-service
-  #       dockerfile: Dockerfile.dev
-  #   environment:
-  #     - ENVIRONMENT=dev
-  #     - ZIPKIN_COLLECTOR_ENDPOINT=http://0.0.0.0:9411/api/v2/spans
-  #     - NATS_URI=nats://nats-1:4222,nats://nats-2:4222
-  #   volumes:
-  #       - ./database-store-service:/go/src/database-store-service
-  #   networks:
-  #     - health
-  #   depends_on:
-  #     - health-api
-  #     - nats-1
-  #     - nats-2
 
 networks:
   health:

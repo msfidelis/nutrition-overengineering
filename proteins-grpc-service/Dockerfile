@@ -1,4 +1,4 @@
-FROM golang:1.19 AS builder
+FROM golang:1.22 AS builder
 
 WORKDIR $GOPATH/src/proteins-grpc-service
 
@@ -8,7 +8,7 @@ RUN go get -u
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
 
 
-FROM alpine:3.12.3
+FROM cgr.dev/chainguard/wolfi-base:latest
 
 COPY --from=builder /go/src/proteins-grpc-service/main ./
 

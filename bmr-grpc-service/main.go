@@ -11,21 +11,17 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"google.golang.org/grpc"
-
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"google.golang.org/grpc"
 )
 
 func main() {
 
-	logInternal := logger.Instance()
-	tp := tracer.InitTracer()
+	ctx := context.Background()
+	cleanup := tracer.InitTracer(ctx)
+	defer cleanup()
 
-	defer func() {
-		if err := tp.Shutdown(context.Background()); err != nil {
-			log.Printf("Error shutting down tracer provider: %v", err)
-		}
-	}()
+	logInternal := logger.Instance()
 
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
@@ -49,8 +45,7 @@ func main() {
 	s := bmr.Server{}
 
 	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
-		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 	)
 
 	bmr.RegisterBMRServiceServer(grpcServer, &s)

@@ -1,12 +1,7 @@
-FROM golang:1.19 AS builder
+FROM cosmtrek/air
 
-WORKDIR $GOPATH/src/health-api
+WORKDIR $GOPATH/src/workspace
 
 COPY . ./
-
-RUN pwd; ls -lha
-
-# Install Air
-RUN go get -u github.com/cosmtrek/air@v1.28
 
 CMD ["air"]

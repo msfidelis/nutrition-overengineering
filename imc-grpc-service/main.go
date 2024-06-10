@@ -19,13 +19,10 @@ import (
 func main() {
 
 	logInternal := logger.Instance()
-	tp := tracer.InitTracer()
 
-	defer func() {
-		if err := tp.Shutdown(context.Background()); err != nil {
-			log.Printf("Error shutting down tracer provider: %v", err)
-		}
-	}()
+	ctx := context.Background()
+	cleanup := tracer.InitTracer(ctx)
+	defer cleanup()
 
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
@@ -49,8 +46,7 @@ func main() {
 	s := imc.Server{}
 
 	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
-		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 	)
 
 	imc.RegisterIMCServiceServer(grpcServer, &s)

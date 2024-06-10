@@ -11,6 +11,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func Call(ctx context.Context, weight float64, height float64, tracer trace.Tracer) (*Response, error) {
@@ -33,11 +34,10 @@ func Call(ctx context.Context, weight float64, height float64, tracer trace.Trac
 		defer spanCall.End()
 
 		var conn *grpc.ClientConn
-		conn, err = grpc.Dial(
-			imcEndpoint,
-			grpc.WithInsecure(),
-			grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
-			grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+
+		conn, err = grpc.NewClient(imcEndpoint,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		)
 
 		if err != nil {
