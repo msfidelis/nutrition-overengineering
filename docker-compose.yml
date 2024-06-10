@@ -139,22 +139,22 @@ services:
     networks:
       - health
 
-  database-store-service:
-    build:
-        context: ./database-store-service
-        dockerfile: Dockerfile.dev
-    environment:
-      - ENVIRONMENT=dev
-      - JAEGER_COLLECTOR_ENDPOINT=http://jaeger:14268/api/traces
-      - NATS_URI=nats://nats-1:4222,nats://nats-2:4222
-    volumes:
-        - ./database-store-service:/go/src/database-store-service
-    networks:
-      - health
-    depends_on:
-      - health-api
-      - nats-1
-      - nats-2
+  # database-store-service:
+  #   build:
+  #       context: ./database-store-service
+  #       dockerfile: Dockerfile.dev
+  #   environment:
+  #     - ENVIRONMENT=dev
+  #     - JAEGER_COLLECTOR_ENDPOINT=http://jaeger:14268/api/traces
+  #     - NATS_URI=nats://nats-1:4222,nats://nats-2:4222
+  #   volumes:
+  #       - ./database-store-service:/go/src/database-store-service
+  #   networks:
+  #     - health
+  #   depends_on:
+  #     - health-api
+  #     - nats-1
+  #     - nats-2
 
 networks:
   health:

@@ -1,12 +1,7 @@
-FROM golang:1.21 AS builder
+FROM cosmtrek/air
 
-WORKDIR $GOPATH/src/database-store-service
+WORKDIR $GOPATH/src/workspace
 
 COPY . ./
-
-RUN pwd; ls -lha
-
-# Install Air
-RUN go get -u github.com/cosmtrek/air@v1.28
 
 CMD ["air"]
