@@ -1,9 +1,7 @@
 package calculator
 
 import (
-	"encoding/json"
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/msfidelis/health-api/pkg/logger"
@@ -15,8 +13,6 @@ import (
 
 	guuid "github.com/google/uuid"
 	"go.opentelemetry.io/otel/attribute"
-
-	"github.com/nats-io/nats.go"
 )
 
 type Request struct {
@@ -268,47 +264,6 @@ func Post(c *gin.Context) {
 		attribute.Float64("http.response.Recomendations.Calories.Loss.Value", resRecommendations.CaloriesToLoss),
 		attribute.String("http.response.Recomendations.Calories.Loss.Unit", response.Basal.Necessity.Unit),
 	)
-
-	_, spanNatsPublich := tr.Start(c.Request.Context(), "NATS Publish")
-	defer spanNatsPublich.End()
-
-	log.Info().
-		Str("Service", "nats").
-		Str("Queue", "nutrition").
-		Msg("Sending message to NATS Server")
-
-	// Publish on Nats to Save Data
-	nc, err := nats.Connect(os.Getenv("NATS_URI"))
-	defer nc.Close()
-	if err != nil {
-		log.Error().
-			Str("Error", err.Error()).
-			Msg("Error to connect to Nats")
-	}
-
-	// Create JetStream Context
-	js, err := nc.JetStream()
-
-	if err != nil {
-		log.Error().
-			Str("Error", err.Error()).
-			Msg("Error to create jetstream to Nats")
-	}
-
-	if err != nil {
-		log.Error().
-			Str("Error", err.Error()).
-			Msg("Error to convert response to json")
-	}
-
-	b, err := json.Marshal(response)
-	_, err = js.Publish("ORDERS.scratch", b)
-
-	if err != nil {
-		log.Error().
-			Str("Error", err.Error()).
-			Msg("Error to publish message on jetstream")
-	}
 
 	c.JSON(http.StatusOK, response)
 }

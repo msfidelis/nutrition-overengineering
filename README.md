@@ -99,14 +99,14 @@ curl --location --request POST '0.0.0.0:8080/calculator' \
 }
 ```
 
-# Jaeger
+# Jaeger and Zipkin
 
 ## Using Tracing between services 
 
-To use jaeger tracing you can specify environment variable called `JAEGER_COLLECTOR_ENDPOINT`. 
+To use jaeger tracing with zipkin you can specify environment variable called `ZIPKIN_COLLECTOR_ENDPOINT`. 
 
 ```bash
-export JAEGER_COLLECTOR_ENDPOINT=http://jaeger:14268/api/traces
+export ZIPKIN_COLLECTOR_ENDPOINT=http://jaeger:9411/api/v2/spans
 ```
 
 ![Jaeger Tracing](.github/images/jaeger-tracing.png)

@@ -45,17 +45,13 @@ services:
       - IMC_SERVICE_ENDPOINT=imc-grpc:30000
       - RECOMMENDATIONS_SERVICE_ENDPOINT=recommendations-grpc:30000
       - ZIPKIN_COLLECTOR_ENDPOINT=http://jaeger:9411/api/v2/spans
-      - NATS_ENABLED=false
-      - NATS_URI=nats://nats-1:4222,nats://nats-2:4222
     ports:
         - 8080:8080
     volumes:
         - ./health-api:/go/src/health-api
     networks:
       - health
-    # depends_on:
-    #   - nats-1
-    #   - nats-2
+
 
   bmr-grpc:
     build:
