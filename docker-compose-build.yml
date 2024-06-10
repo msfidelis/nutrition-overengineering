@@ -1,0 +1,111 @@
+version: '3.7'
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    ports:
+      - "6831:6831/udp"
+      - "16686:16686"
+      - "14268:14268"
+      - "9411:9411"
+
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+    networks:
+      - health
+
+  health-api:
+    build:
+        context: ./health-api
+        dockerfile: Dockerfile
+    environment:
+      - ENVIRONMENT=dev
+      - BMR_SERVICE_ENDPOINT=bmr-grpc:30000
+      - IMC_SERVICE_ENDPOINT=imc-grpc:30000
+      - RECOMMENDATIONS_SERVICE_ENDPOINT=recommendations-grpc:30000
+      - ZIPKIN_COLLECTOR_ENDPOINT=http://jaeger:9411/api/v2/spans
+      - NATS_ENABLED=false
+      - NATS_URI=nats://nats-1:4222,nats://nats-2:4222
+    ports:
+        - 8080:8080
+    volumes:
+        - ./health-api:/go/src/health-api
+    networks:
+      - health
+
+  bmr-grpc:
+    build:
+        context: ./bmr-grpc-service
+        dockerfile: Dockerfile
+    environment:
+      - ENVIRONMENT=dev
+      - ZIPKIN_COLLECTOR_ENDPOINT=http://jaeger:9411/api/v2/spans
+    volumes:
+        - ./bmr-grpc-service:/go/src/bmr-grpc-service
+    networks:
+      - health
+      
+  imc-grpc:
+    build:
+        context: ./imc-grpc-service
+        dockerfile: Dockerfile
+    environment:
+      - ENVIRONMENT=dev
+      - ZIPKIN_COLLECTOR_ENDPOINT=http://jaeger:9411/api/v2/spans
+    volumes:
+        - ./imc-grpc-service:/go/src/imc-grpc-service
+    networks:
+      - health
+      
+  recommendations-grpc:
+    build:
+        context: ./recommendations-grpc-service
+        dockerfile: Dockerfile
+    environment:
+      - ENVIRONMENT=dev
+      - PROTEINS_SERVICE_ENDPOINT=proteins-grpc:30000
+      - WATER_SERVICE_ENDPOINT=water-grpc:30000
+      - CALORIES_SERVICE_ENDPOINT=calories-grpc:30000
+      - ZIPKIN_COLLECTOR_ENDPOINT=http://jaeger:9411/api/v2/spans
+    volumes:
+        - ./recommendations-grpc-service:/go/src/recommendations-grpc-service
+    networks:
+      - health
+
+  proteins-grpc:
+    build:
+        context: ./proteins-grpc-service
+        dockerfile: Dockerfile
+    environment:
+      - ENVIRONMENT=dev
+      - ZIPKIN_COLLECTOR_ENDPOINT=http://jaeger:9411/api/v2/spans
+    volumes:
+        - ./proteins-grpc-service:/go/src/proteins-grpc-service
+    networks:
+      - health
+
+  water-grpc:
+    build:
+        context: ./water-grpc-service
+        dockerfile: Dockerfile
+    environment:
+      - ENVIRONMENT=dev
+      - ZIPKIN_COLLECTOR_ENDPOINT=http://jaeger:9411/api/v2/spans
+    volumes:
+        - ./water-grpc-service:/go/src/water-grpc-service
+    networks:
+      - health
+
+  calories-grpc:
+    build:
+        context: ./calories-grpc-service
+        dockerfile: Dockerfile
+    environment:
+      - ENVIRONMENT=dev
+      - ZIPKIN_COLLECTOR_ENDPOINT=http://jaeger:9411/api/v2/spans
+    volumes:
+        - ./calories-grpc-service:/go/src/calories-grpc-service
+    networks:
+      - health
+
+networks:
+  health:
