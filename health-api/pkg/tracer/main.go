@@ -1,48 +1,61 @@
 package tracer
 
 import (
-	"fmt"
-	"os"
+	"context"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/jaeger"
 
 	// stdout "go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
-	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/resource"
+
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
+
+	"context"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 func InitTracer() *sdktrace.TracerProvider {
-	exp, err := jaeger.New(
-		jaeger.WithCollectorEndpoint(
-			jaeger.WithEndpoint(
-				os.Getenv("JAEGER_COLLECTOR_ENDPOINT"),
-			),
-		),
-	)
+	// exp, err := jaeger.New(
+	// 	jaeger.WithCollectorEndpoint(
+	// 		jaeger.WithEndpoint(
+	// 			os.Getenv("JAEGER_COLLECTOR_ENDPOINT"),
+	// 		),
+	// 	),
+	// )
+	// if err != nil {
+	// 	fmt.Println("Failed to init jaeger", err)
+	// }
+	ctx := context.Background()
+	exp, err := otlptracehttp.New(ctx)
 	if err != nil {
-		fmt.Println("Failed to init jaeger", err)
+		panic(err)
 	}
+	tracerProvider := trace.NewTracerProvider(trace.WithBatcher(exp))
+	defer func() {
+		if err := tracerProvider.Shutdown(ctx); err != nil {
+			panic(err)
+		}
+	}()
 
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exp),
-		sdktrace.WithSampler(sdktrace.AlwaysSample()),
-		sdktrace.WithResource(resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceNameKey.String("health-api"),
-		)),
-	)
+	// tp := sdktrace.NewTracerProvider(
+	// 	sdktrace.WithBatcher(exp),
+	// 	sdktrace.WithSampler(sdktrace.AlwaysSample()),
+	// 	sdktrace.WithResource(resource.NewWithAttributes(
+	// 		semconv.SchemaURL,
+	// 		semconv.ServiceNameKey.String("health-api"),
+	// 	)),
+	// )
 
-	otel.SetTextMapPropagator(
-		propagation.NewCompositeTextMapPropagator(
-			propagation.TraceContext{},
-			propagation.Baggage{},
-		),
-	)
+	// otel.SetTextMapPropagator(
+	// 	propagation.NewCompositeTextMapPropagator(
+	// 		propagation.TraceContext{},
+	// 		propagation.Baggage{},
+	// 	),
+	// )
 
-	otel.SetTracerProvider(tp)
+	otel.SetTracerProvider(tracerProvider)
 
-	return tp
+	return tracerProvider
 }
