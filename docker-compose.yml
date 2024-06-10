@@ -9,27 +9,27 @@ services:
     networks:
       - health
 
-  nats-1:
-    image: nats:alpine
-    volumes:
-      - ./nats/nats-server-1.conf:/etc/nats/nats-server.conf
-      - .tmp/nats/data/jetstream/1:/data/jetstream
-    ports:
-      - "4223:4222"
-      - "8223:8222"
-    networks:
-      - health
+  # nats-1:
+  #   image: nats:alpine
+  #   volumes:
+  #     - ./nats/nats-server-1.conf:/etc/nats/nats-server.conf
+  #     - .tmp/nats/data/jetstream/1:/data/jetstream
+  #   ports:
+  #     - "4223:4222"
+  #     - "8223:8222"
+  #   networks:
+  #     - health
 
-  nats-2:
-    image: nats:alpine
-    volumes:
-      - ./nats/nats-server-2.conf:/etc/nats/nats-server.conf
-      - .tmp/nats/data/jetstream/2:/data/jetstream
-    ports:
-      - "4224:4222"
-      - "8224:8222"
-    networks:
-      - health
+  # nats-2:
+  #   image: nats:alpine
+  #   volumes:
+  #     - ./nats/nats-server-2.conf:/etc/nats/nats-server.conf
+  #     - .tmp/nats/data/jetstream/2:/data/jetstream
+  #   ports:
+  #     - "4224:4222"
+  #     - "8224:8222"
+  #   networks:
+  #     - health
 
   health-api:
     build:
@@ -41,6 +41,7 @@ services:
       - IMC_SERVICE_ENDPOINT=imc-grpc:30000
       - RECOMMENDATIONS_SERVICE_ENDPOINT=recommendations-grpc:30000
       - JAEGER_COLLECTOR_ENDPOINT=http://jaeger:14268/api/traces
+      - NATS_ENABLED=false
       - NATS_URI=nats://nats-1:4222,nats://nats-2:4222
     ports:
         - 8080:8080
@@ -48,9 +49,9 @@ services:
         - ./health-api:/go/src/health-api
     networks:
       - health
-    depends_on:
-      - nats-1
-      - nats-2
+    # depends_on:
+    #   - nats-1
+    #   - nats-2
 
   bmr-grpc:
     build:
