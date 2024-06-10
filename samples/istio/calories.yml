@@ -33,8 +33,8 @@ spec:
         env:
         - name: ENVIRONMENT
           value: "dev"
-        - name: JAEGER_COLLECTOR_ENDPOINT
-          value: http://jaeger.jaeger.svc.cluster.local:14268/api/traces
+        - name: ZIPKIN_COLLECTOR_ENDPOINT
+          value: http://jaeger.jaeger.svc.cluster.local:9411/api/v2/spans
         ports:
         - containerPort: 30000
           name: http   

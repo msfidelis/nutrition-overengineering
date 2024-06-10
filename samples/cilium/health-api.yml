@@ -32,8 +32,8 @@ spec:
         env:
         - name: ENVIRONMENT
           value: "dev"
-        - name: JAEGER_COLLECTOR_ENDPOINT
-          value: http://jaeger.jaeger.svc.cluster.local:14268/api/traces          
+        - name: ZIPKIN_COLLECTOR_ENDPOINT
+          value: http://jaeger.jaeger.svc.cluster.local:9411/api/v2/spans          
         - name: BMR_SERVICE_ENDPOINT
           value: "bmr-grpc.bmr.svc.cluster.local:30000"
         - name: IMC_SERVICE_ENDPOINT
