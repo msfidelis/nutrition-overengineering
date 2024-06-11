@@ -33,7 +33,7 @@ spec:
         - name: ENVIRONMENT
           value: "dev"
         - name: ZIPKIN_COLLECTOR_ENDPOINT
-          value: http://jaeger.jaeger.svc.cluster.local:9411/api/v2/spans          
+          value: http://jaeger-collector.jaeger.svc.cluster.local:9411/api/v2/spans          
         - name: PROTEINS_SERVICE_ENDPOINT
           value: "proteins-grpc.proteins.svc.cluster.local:30000"  
         - name: WATER_SERVICE_ENDPOINT
@@ -52,7 +52,9 @@ metadata:
   namespace: recommendations
   annotations:
     prometheus.io/scrape: "true"
-    prometheus.io/port: "30000"    
+    prometheus.io/port: "30000"
+    service.cilium.io/lb-l7: enabled
+    service.cilium.io/lb-l7-algorithm: round_robin
   labels:
     app.kubernetes.io/name: recommendations-grpc
     app.kubernetes.io/instance: health-api 
@@ -64,3 +66,45 @@ spec:
   selector:
     app: recommendations-grpc
   type: ClusterIP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-health-api-to-recommendations-grpc
+  namespace: recommendations
+spec:
+  endpointSelector:
+    matchLabels:
+      app: recommendations-grpc
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        app: health-api
+  - toPorts:
+    - ports:
+      - port: "30000"
+        protocol: TCP
+      rules:
+        http:
+        - method: "POST"
+          path: "/recommendations.RecomendationsService/SayHello"
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: recommendations
+spec:
+  endpointSelector:
+    matchLabels:
+      app: recommendations-grpc
+  ingress:
+  - toPorts:
+    - ports:
+      - port: "30000"
+        protocol: TCP  
+  - fromEndpoints:
+    - matchLabels:
+        namespace: prometheus
+
+  

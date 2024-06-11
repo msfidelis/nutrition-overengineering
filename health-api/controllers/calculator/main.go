@@ -171,7 +171,7 @@ func Post(c *gin.Context) {
 
 	log.Info().
 		Str("Service", "recommendations").
-		Msg("Creating remote connection with gRPC Endpoint for IMC Service")
+		Msg("Creating remote connection with gRPC Endpoint for Recommendations Service")
 
 	resRecommendations, err := recommendations.Call(ctxRecommendations, request.Weight, request.Height, resBMR.Necessity, tr)
 

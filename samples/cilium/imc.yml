@@ -33,7 +33,7 @@ spec:
         - name: ENVIRONMENT
           value: "dev"
         - name: ZIPKIN_COLLECTOR_ENDPOINT
-          value: http://jaeger.jaeger.svc.cluster.local:9411/api/v2/spans          
+          value: http://jaeger-collector.jaeger.svc.cluster.local:9411/api/v2/spans          
         ports:
         - containerPort: 30000
           name: http   
@@ -46,7 +46,8 @@ metadata:
   namespace: imc
   annotations:
     prometheus.io/scrape: "true"
-    prometheus.io/port: "30000"    
+    prometheus.io/port: "30000"
+    service.cilium.io/lb-l7: enabled
   labels:
     app.kubernetes.io/name: imc-grpc
     app.kubernetes.io/instance: health-api 
@@ -58,3 +59,43 @@ spec:
   selector:
     app: imc-grpc
   type: ClusterIP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-health-api-to-imc-grpc
+  namespace: imc
+spec:
+  endpointSelector:
+    matchLabels:
+      app: imc-grpc
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        app: health-api
+  - toPorts:
+    - ports:
+      - port: "30000"
+        protocol: TCP
+      rules:
+        http:
+        - method: "POST"
+          path: "/imc.IMCService/SayHello"
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: imc
+spec:
+  endpointSelector:
+    matchLabels:
+      app: imc-grpc
+  ingress:
+  - toPorts:
+    - ports:
+      - port: "30000"
+        protocol: TCP  
+  - fromEndpoints:
+    - matchLabels:
+        namespace: prometheus

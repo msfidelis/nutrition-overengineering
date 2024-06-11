@@ -34,7 +34,7 @@ spec:
         - name: ENVIRONMENT
           value: "dev" 
         - name: ZIPKIN_COLLECTOR_ENDPOINT
-          value: http://jaeger.jaeger.svc.cluster.local:9411/api/v2/spans          
+          value: http://jaeger-collector.jaeger.svc.cluster.local:9411/api/v2/spans          
         ports:
         - containerPort: 30000
           name: http   
