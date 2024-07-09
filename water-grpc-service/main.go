@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net"
+	"net/http"
 	"os"
 	"water-grpc-service/pkg/logger"
 	"water-grpc-service/pkg/tracer"
@@ -40,6 +41,9 @@ func main() {
 			Msg("Failed to listen")
 	}
 
+	// Healthcheck Probe :8080
+	go startHTTPHealthCheckServer()
+
 	logInternal.Info().
 		Msg("Listener for water-grpc-service is created")
 
@@ -60,4 +64,17 @@ func main() {
 	logInternal.Info().
 		Msg("Server water-grpc-service is enabled")
 
+}
+
+func startHTTPHealthCheckServer() {
+	logInternal := logger.Instance()
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+
+	logInternal.Info().Msg("Starting HTTP healthcheck server on :8080")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		logInternal.Fatal().Err(err).Msg("Failed to start HTTP healthcheck server")
+	}
 }
