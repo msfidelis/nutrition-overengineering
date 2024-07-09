@@ -3,6 +3,7 @@ package main
 import (
 	"database-store-service/pkg/logger"
 	"fmt"
+	"net/http"
 	"os"
 	"sync"
 
@@ -15,6 +16,9 @@ func main() {
 
 	wg := sync.WaitGroup{}
 	wg.Add(10)
+
+	// Healthcheck Probe :8080
+	go startHTTPHealthCheckServer()
 
 	// Nats Client
 	nc, err := nats.Connect(os.Getenv("NATS_URI"))
@@ -61,4 +65,17 @@ func main() {
 	// Wait for a message to come in
 	wg.Wait()
 
+}
+
+func startHTTPHealthCheckServer() {
+	logInternal := logger.Instance()
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+
+	logInternal.Info().Msg("Starting HTTP healthcheck server on :8080")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		logInternal.Fatal().Err(err).Msg("Failed to start HTTP healthcheck server")
+	}
 }

@@ -6,6 +6,7 @@ import (
 	"imc-grpc-service/pkg/tracer"
 	"imc-grpc-service/proto/imc/service/imc"
 	"net"
+	"net/http"
 	"os"
 
 	"github.com/rs/zerolog"
@@ -40,6 +41,9 @@ func main() {
 			Msg("Failed to listen")
 	}
 
+	// Healthcheck Probe :8080
+	go startHTTPHealthCheckServer()
+
 	logInternal.Info().
 		Msg("Listener for imc-grpc-service is created")
 
@@ -59,5 +63,17 @@ func main() {
 
 	logInternal.Info().
 		Msg("Server imc-grpc-service is enabled")
+}
 
+func startHTTPHealthCheckServer() {
+	logInternal := logger.Instance()
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+
+	logInternal.Info().Msg("Starting HTTP healthcheck server on :8080")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		logInternal.Fatal().Err(err).Msg("Failed to start HTTP healthcheck server")
+	}
 }

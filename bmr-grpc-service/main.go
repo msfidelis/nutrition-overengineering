@@ -6,6 +6,7 @@ import (
 	"bmr-grpc-service/proto/bmr/service/bmr"
 	"context"
 	"net"
+	"net/http"
 	"os"
 
 	"github.com/rs/zerolog"
@@ -39,6 +40,9 @@ func main() {
 			Msg("Failed to listen")
 	}
 
+	// Healthcheck Probe :8080
+	go startHTTPHealthCheckServer()
+
 	logInternal.Info().
 		Msg("Listener for bmr-grpc-service is created")
 
@@ -59,4 +63,17 @@ func main() {
 	logInternal.Info().
 		Msg("Server bmr-grpc-service is enabled")
 
+}
+
+func startHTTPHealthCheckServer() {
+	logInternal := logger.Instance()
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+
+	logInternal.Info().Msg("Starting HTTP healthcheck server on :8080")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		logInternal.Fatal().Err(err).Msg("Failed to start HTTP healthcheck server")
+	}
 }
