@@ -177,7 +177,7 @@ func Post(c *gin.Context) {
 
 	if err != nil {
 		log.Error().
-			Str("Service", "imc").
+			Str("Service", "recommendations").
 			Str("Error", err.Error()).
 			Msg("Error to consume gRPC Service")
 
@@ -186,7 +186,7 @@ func Post(c *gin.Context) {
 		)
 
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Error to create gRPC Connection with IMC Service",
+			"message": "Error to create gRPC Connection with Recommendations Service",
 			"error":   err.Error(),
 		})
 	}
