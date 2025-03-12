@@ -7,7 +7,7 @@ Application to calc healthcare and nutrition metrics, but using the most over en
 
 # Overenginner Microservices Summary
 
-* `health-api`: REST Interface for product. Using orchestrator pattern. 
+* `health-api`: REST Interface for product. Using API Composition pattern. 
 * `bmr-grpc`: gRPC Microservice to calc Basal Metabolic Rate
 * `imc-grpc`: gRPC Microservice to calc IMC 
 * `recommendations-grpc`: gRPC Microservice to summarize diet recommendations and contabilize Macros

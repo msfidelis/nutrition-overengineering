@@ -61,6 +61,8 @@ services:
     environment:
       - ENVIRONMENT=dev
       - MESSAGE_TYPE=sqs # none, sqs
+      - WORKERS=1
+      - WORKERS_JITTER_MS=10000
       - DATABASE_TYPE=dynamodb # dynamodb, postgres
       - SQS_QUEUE_URL=https://sqs.us-east-1.amazonaws.com/181560427716/nutrition-mock
       - DYNAMODB_TABLE=mock
