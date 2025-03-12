@@ -1,10 +1,12 @@
 package calculator
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/msfidelis/health-api/pkg/logger"
+	"github.com/msfidelis/health-api/pkg/message"
 	"github.com/msfidelis/health-api/pkg/services/bmr"
 	"github.com/msfidelis/health-api/pkg/services/imc"
 	"github.com/msfidelis/health-api/pkg/services/recommendations"
@@ -265,5 +267,20 @@ func Post(c *gin.Context) {
 		attribute.String("http.response.Recomendations.Calories.Loss.Unit", response.Basal.Necessity.Unit),
 	)
 
+	// Send Message
+	log.Info().
+		Msg("Parsing response to send to offload")
+	resJSON, err := json.Marshal(response)
+	if err != nil {
+		log.Warn().
+			Str("Error", err.Error()).
+			Msg("Error to marshal response")
+	} else {
+		log.Info().
+			Msg("Sending message to offload")
+		message.SendMessage(string(resJSON))
+	}
+
 	c.JSON(http.StatusOK, response)
+
 }
