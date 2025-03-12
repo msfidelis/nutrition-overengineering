@@ -24,8 +24,30 @@ services:
       - ZIPKIN_COLLECTOR_ENDPOINT=http://jaeger:9411/api/v2/spans
       - NATS_ENABLED=false
       - NATS_URI=nats://nats-1:4222,nats://nats-2:4222
+      - MESSAGE_TYPE=sqs
+      - SQS_QUEUE_URL=https://sqs.us-east-1.amazonaws.com/181560427716/nutrition-mock
+      - AWS_REGION=us-east-1
     ports:
         - 8080:8080
+    volumes:
+        - ./health-api:/go/src/health-api
+    networks:
+      - health
+
+  health-data-offload:
+    build:
+        context: ./health-data-offload
+        dockerfile: Dockerfile.dev
+    environment:
+      - ENVIRONMENT=dev
+      - MESSAGE_TYPE=sqs # none, sqs
+      - WORKERS=1
+      - WORKERS_JITTER_MS=300
+      - DATABASE_TYPE=dynamodb # dynamodb, postgres
+      - SQS_QUEUE_URL=https://sqs.us-east-1.amazonaws.com/181560427716/nutrition-mock
+      - DYNAMODB_TABLE=mock
+      - AWS_REGION=us-east-1
+      - ZIPKIN_COLLECTOR_ENDPOINT=http://jaeger:9411/api/v2/spans
     volumes:
         - ./health-api:/go/src/health-api
     networks:
