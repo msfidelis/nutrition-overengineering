@@ -7,13 +7,14 @@ Application to calc healthcare and nutrition metrics, but using the most over en
 
 # Overenginner Microservices Summary
 
-* `health-api`: REST Interface for product. Using orchestrator pattern. 
+* `health-api`: REST Interface for product. Using API Composition pattern. 
 * `bmr-grpc`: gRPC Microservice to calc Basal Metabolic Rate
 * `imc-grpc`: gRPC Microservice to calc IMC 
 * `recommendations-grpc`: gRPC Microservice to summarize diet recommendations and contabilize Macros
 * `proteins-grpc`: gRPC Microservice to calc daily protein necessity
 * `water-grpc`: gRPC Microservice to calc daily water ingestion
 * `calories-grpc`: gRPC to calc calories ingestion necessity
+* `health-data-offload`: Worker to save health-reports on data layer
 * `frontend`: VueJS SPA
 
 ## Docker Images
@@ -27,6 +28,7 @@ Application to calc healthcare and nutrition metrics, but using the most over en
 | calories-grpc-service         | fidelissauro/calories-grpc-service:latest         |
 | proteins-grpc-service         | fidelissauro/proteins-grpc-service:latest         |
 | recommendations-grpc-service  | fidelissauro/recommendations-grpc-service:latest  | 
+| health-data-offload           | fidelissauro/health-data-offloa:latest            | 
 
 ## Workflow 
 

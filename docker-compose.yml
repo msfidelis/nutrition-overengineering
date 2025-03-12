@@ -1,4 +1,3 @@
-version: '3.7'
 services:
   jaeger:
     image: jaegertracing/all-in-one:1.57
@@ -41,6 +40,8 @@ services:
         dockerfile: Dockerfile.dev
     environment:
       - ENVIRONMENT=dev
+      - MESSAGE_TYPE=sqs # none, sqs
+      - SQS_QUEUE_URL=http://localhost:9324/queue/health
       - BMR_SERVICE_ENDPOINT=bmr-grpc:30000
       - IMC_SERVICE_ENDPOINT=imc-grpc:30000
       - RECOMMENDATIONS_SERVICE_ENDPOINT=recommendations-grpc:30000
@@ -52,6 +53,27 @@ services:
     networks:
       - health
 
+
+  health-data-offload:
+    build:
+        context: ./health-data-offload
+        dockerfile: Dockerfile.dev
+    environment:
+      - ENVIRONMENT=dev
+      - MESSAGE_TYPE=sqs # none, sqs
+      - WORKERS=1
+      - WORKERS_JITTER_MS=10000
+      - DATABASE_TYPE=dynamodb # dynamodb, postgres
+      - SQS_QUEUE_URL=https://sqs.us-east-1.amazonaws.com/181560427716/nutrition-mock
+      - DYNAMODB_TABLE=mock
+      - AWS_REGION=us-east-1
+      - ZIPKIN_COLLECTOR_ENDPOINT=http://jaeger:9411/api/v2/spans
+    ports:
+        - 8080:8080
+    volumes:
+        - ./health-api:/go/src/health-api
+    networks:
+      - health
 
   bmr-grpc:
     build:
