@@ -1,0 +1,7 @@
+FROM cosmtrek/air
+
+WORKDIR $GOPATH/src/workspace
+
+COPY . ./
+
+CMD ["air"]

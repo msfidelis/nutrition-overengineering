@@ -19,7 +19,6 @@ func main() {
 
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
-	// Healthcheck Probe :8080
 	go startHTTPHealthCheckServer()
 
 	logInternal.Info().Msg("Starting Consumer")
