@@ -26,7 +26,7 @@ func InitTracer(ctx context.Context) func() {
 		sdktrace.WithBatcher(exporter),
 		sdktrace.WithResource(resource.NewWithAttributes(
 			semconv.SchemaURL,
-			semconv.ServiceNameKey.String("nutrition-imc-service"),
+			semconv.ServiceNameKey.String("imc-grpc"),
 		)),
 	)
 	otel.SetTracerProvider(tp)
