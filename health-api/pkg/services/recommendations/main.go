@@ -43,6 +43,7 @@ func Call(ctx context.Context, weight float64, height float64, necessity float64
 		if err != nil {
 			log.Error().
 				Str("Service", "recommendations").
+				Str("traceID", spanCall.SpanContext().TraceID().String()).
 				Str("Error", err.Error()).
 				Msg("Failed to create gRPC Connection with recommendations Service")
 
@@ -64,6 +65,7 @@ func Call(ctx context.Context, weight float64, height float64, necessity float64
 		if err != nil {
 			log.Error().
 				Str("Service", "recommendations").
+				Str("traceID", spanCall.SpanContext().TraceID().String()).
 				Str("Error", err.Error()).
 				Msg("Failed to communicate with recommendations Service")
 
@@ -79,6 +81,7 @@ func Call(ctx context.Context, weight float64, height float64, necessity float64
 
 		log.Info().
 			Str("Service", "recommendations").
+			Str("traceID", spanCall.SpanContext().TraceID().String()).
 			Int("Retry", i+1).
 			Str("Backoff", fmt.Sprintf("%s", backoff)).
 			Msg("Failed to communicate with recommendations Service")
