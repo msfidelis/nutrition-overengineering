@@ -20,6 +20,8 @@ func (s *Server) SayHello(ctx context.Context, in *Message) (*Response, error) {
 	defer span.End()
 
 	log.Info().
+		Str("Service", "bmr").
+		Str("traceID", span.SpanContext().TraceID().String()).
 		Str("Gender", in.Gender).
 		Float64("Weight", in.Weight).
 		Float64("Height", in.Height).
@@ -30,6 +32,8 @@ func (s *Server) SayHello(ctx context.Context, in *Message) (*Response, error) {
 	bmrCalc, necessity := calculator.Calc(in.Gender, in.Weight, in.Height, in.Age, in.Activity)
 
 	log.Info().
+		Str("Service", "bmr").
+		Str("traceID", span.SpanContext().TraceID().String()).
 		Str("Gender", in.Gender).
 		Float64("Weight", in.Weight).
 		Float64("Height", in.Height).

@@ -113,6 +113,7 @@ func Post(c *gin.Context) {
 
 	log.Info().
 		Str("Service", "bmr").
+		Str("traceID", span.SpanContext().TraceID().String()).
 		Msg("Creating remote connection with gRPC Endpoint for BMR Service")
 
 	spanBMR.SetAttributes(
@@ -125,6 +126,7 @@ func Post(c *gin.Context) {
 		log.Error().
 			Str("Service", "bmr").
 			Str("Error", err.Error()).
+			Str("traceID", spanBMR.SpanContext().TraceID().String()).
 			Msg("Error to consume gRPC Service")
 
 		spanBMR.SetAttributes(
@@ -143,6 +145,7 @@ func Post(c *gin.Context) {
 
 	log.Info().
 		Str("Service", "imc").
+		Str("traceID", spanIMC.SpanContext().TraceID().String()).
 		Msg("Creating remote connection with gRPC Endpoint for IMC Service")
 
 	spanIMC.SetAttributes(
@@ -154,6 +157,7 @@ func Post(c *gin.Context) {
 	if err != nil {
 		log.Error().
 			Str("Service", "imc").
+			Str("traceID", spanIMC.SpanContext().TraceID().String()).
 			Str("Error", err.Error()).
 			Msg("Error to consume gRPC Service")
 
@@ -173,6 +177,7 @@ func Post(c *gin.Context) {
 
 	log.Info().
 		Str("Service", "recommendations").
+		Str("traceID", spanRecommendations.SpanContext().TraceID().String()).
 		Msg("Creating remote connection with gRPC Endpoint for Recommendations Service")
 
 	resRecommendations, err := recommendations.Call(ctxRecommendations, request.Weight, request.Height, resBMR.Necessity, tr)
@@ -180,6 +185,7 @@ func Post(c *gin.Context) {
 	if err != nil {
 		log.Error().
 			Str("Service", "recommendations").
+			Str("traceID", spanRecommendations.SpanContext().TraceID().String()).
 			Str("Error", err.Error()).
 			Msg("Error to consume gRPC Service")
 
@@ -206,6 +212,7 @@ func Post(c *gin.Context) {
 
 	log.Info().
 		Str("Service", "health-api").
+		Str("traceID", spanResponse.SpanContext().TraceID().String()).
 		Msg("Creating response payload")
 
 	// UUID
@@ -269,16 +276,19 @@ func Post(c *gin.Context) {
 
 	// Send Message
 	log.Info().
+		Str("traceID", spanResponse.SpanContext().TraceID().String()).
 		Msg("Parsing response to send to offload")
 	resJSON, err := json.Marshal(response)
 	if err != nil {
 		log.Warn().
+			Str("traceID", spanResponse.SpanContext().TraceID().String()).
 			Str("Error", err.Error()).
 			Msg("Error to marshal response")
 	} else {
 		log.Info().
+			Str("traceID", spanResponse.SpanContext().TraceID().String()).
 			Msg("Sending message to offload")
-		message.SendMessage(string(resJSON))
+		message.SendMessage(c.Request.Context(), string(resJSON))
 	}
 
 	c.JSON(http.StatusOK, response)

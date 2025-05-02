@@ -43,6 +43,7 @@ func Call(ctx context.Context, weight float64, height float64, tracer trace.Trac
 		if err != nil {
 			log.Error().
 				Str("Service", "imc").
+				Str("traceID", spanCall.SpanContext().TraceID().String()).
 				Str("Error", err.Error()).
 				Msg("Failed to create gRPC Connection with imc Service")
 
@@ -63,6 +64,7 @@ func Call(ctx context.Context, weight float64, height float64, tracer trace.Trac
 		if err != nil {
 			log.Error().
 				Str("Service", "imc").
+				Str("traceID", spanCall.SpanContext().TraceID().String()).
 				Str("Error", err.Error()).
 				Msg("Failed to communicate with imc Service")
 
@@ -78,6 +80,7 @@ func Call(ctx context.Context, weight float64, height float64, tracer trace.Trac
 
 		log.Info().
 			Str("Service", "imc").
+			Str("traceID", spanCall.SpanContext().TraceID().String()).
 			Int("Retry", i+1).
 			Str("Backoff", fmt.Sprintf("%s", backoff)).
 			Msg("Failed to communicate with imc Service")

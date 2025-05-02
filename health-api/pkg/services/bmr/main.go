@@ -43,6 +43,7 @@ func Call(ctx context.Context, gender string, weight float64, height float64, ac
 		if err != nil {
 			log.Error().
 				Str("Service", "bmr").
+				Str("traceID", spanCall.SpanContext().TraceID().String()).
 				Str("Endpoint", bmrEndpoint).
 				Str("Error", err.Error()).
 				Msg("Failed to create gRPC Connection with BMR Service")
@@ -66,6 +67,7 @@ func Call(ctx context.Context, gender string, weight float64, height float64, ac
 		if err != nil {
 			log.Error().
 				Str("Service", "bmr").
+				Str("traceID", spanCall.SpanContext().TraceID().String()).
 				Str("Endpoint", bmrEndpoint).
 				Str("Error", err.Error()).
 				Msg("Failed to communicate with BMR Service")
@@ -82,6 +84,7 @@ func Call(ctx context.Context, gender string, weight float64, height float64, ac
 
 		log.Info().
 			Str("Service", "bmr").
+			Str("traceID", spanCall.SpanContext().TraceID().String()).
 			Int("Retry", i+1).
 			Str("Backoff", fmt.Sprintf("%s", backoff)).
 			Msg("Failed to communicate with BMR Service")

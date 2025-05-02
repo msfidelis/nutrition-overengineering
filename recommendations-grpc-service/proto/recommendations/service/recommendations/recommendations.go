@@ -18,10 +18,14 @@ type Server struct {
 
 func (s *Server) SayHello(ctx context.Context, in *Message) (*Response, error) {
 	log := logger.Instance()
-	tr := otel.Tracer("recommendations-grpc-service")
+	tracer := otel.Tracer("recommendations-grpc-server")
+	_, span := tracer.Start(ctx, "SayHello")
+	defer span.End()
 
 	// Water
 	log.Info().
+		Str("Service", "recommendations").
+		Str("traceID", span.SpanContext().TraceID().String()).
 		Float64("Weight", in.Weight).
 		Float64("Height", in.Height).
 		Msg("Calculating water")
@@ -30,19 +34,23 @@ func (s *Server) SayHello(ctx context.Context, in *Message) (*Response, error) {
 
 	log.Info().
 		Str("Service", "water").
+		Str("traceID", span.SpanContext().TraceID().String()).
 		Str("WATER_SERVICE_ENDPOINT", waterEndpoint).
 		Msg("Creating remote connection with gRPC Endpoint for Water Consume Service")
 
-	resWater, err := water.Call(ctx, in.Weight, in.Height, tr)
+	resWater, err := water.Call(ctx, in.Weight, in.Height, tracer)
 
 	if err != nil {
 		log.Error().
 			Str("Service", "water").
+			Str("traceID", span.SpanContext().TraceID().String()).
 			Str("Error", err.Error()).
 			Msg("Failed consume water service")
 	}
 
 	log.Info().
+		Str("Service", "recommendations").
+		Str("traceID", span.SpanContext().TraceID().String()).
 		Float64("Weight", in.Weight).
 		Float64("Height", in.Height).
 		Float64("Water", resWater.Value).
@@ -51,36 +59,43 @@ func (s *Server) SayHello(ctx context.Context, in *Message) (*Response, error) {
 	// Proteins
 
 	log.Info().
+		Str("Service", "recommendations").
+		Str("traceID", span.SpanContext().TraceID().String()).
 		Float64("Weight", in.Weight).
 		Float64("Height", in.Height).
 		Msg("Calculating proteins necessity")
 
-	resProteins, err := proteins.Call(ctx, in.Weight, tr)
+	resProteins, err := proteins.Call(ctx, in.Weight, tracer)
 
 	if err != nil {
 		log.Error().
 			Str("Service", "water").
+			Str("traceID", span.SpanContext().TraceID().String()).
 			Str("Error", err.Error()).
 			Msg("Failed consume water service")
 	}
 
 	// Calories
 	log.Info().
+		Str("Service", "recommendations").
+		Str("traceID", span.SpanContext().TraceID().String()).
 		Float64("Weight", in.Weight).
 		Float64("Height", in.Height).
 		Msg("Calculating calories necessity")
 
-	resCalories, err := calories.Call(ctx, in.Calories, tr)
+	resCalories, err := calories.Call(ctx, in.Calories, tracer)
 
 	if err != nil {
 		log.Error().
-			Str("Service", "errCalories").
+			Str("Service", "calories").
+			Str("traceID", span.SpanContext().TraceID().String()).
 			Str("Error", err.Error()).
 			Msg("Failed consume errCalories service")
 	}
 
 	log.Info().
 		Str("Service", "calories").
+		Str("traceID", span.SpanContext().TraceID().String()).
 		Float64("Necessity", in.Calories).
 		Float64("Maintain", resCalories.Maintain).
 		Float64("Loss", resCalories.Loss).
