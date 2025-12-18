@@ -68,8 +68,6 @@ services:
       - DYNAMODB_TABLE=mock
       - AWS_REGION=us-east-1
       - ZIPKIN_COLLECTOR_ENDPOINT=http://jaeger:9411/api/v2/spans
-    ports:
-        - 8080:8080
     volumes:
         - ./health-api:/go/src/health-api
     networks:
@@ -86,6 +84,9 @@ services:
         - ./bmr-grpc-service:/go/src/bmr-grpc-service
     networks:
       - health
+    deploy:
+      replicas: 3  # Multiple instances for load balancing
+
   imc-grpc:
     build:
         context: ./imc-grpc-service
